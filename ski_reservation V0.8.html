@@ -1,0 +1,3089 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ski Academy Reservations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Chart.js for reports -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --brand-dark: #1f2937; /* Dark Slate Gray */
+        --brand-light: #f9fafb; /* Off-white */
+        --brand-accent: #f59e0b; /* Amber/Gold */
+        --brand-accent-hover: #d97706;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--brand-light);
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+      }
+      .bg-brand-dark {
+        background-color: var(--brand-dark);
+      }
+      .text-brand-accent {
+        color: var(--brand-accent);
+      }
+      .bg-brand-accent {
+        background-color: var(--brand-accent);
+      }
+      .hover\:bg-brand-accent-hover:hover {
+        background-color: var(--brand-accent-hover);
+      }
+      .border-brand-accent {
+        border-color: var(--brand-accent);
+      }
+      .ring-brand-accent:focus {
+        ring-color: var(--brand-accent);
+      }
+
+      .calendar-grid {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+      }
+      .day {
+        min-height: 80px;
+      }
+      .day.selected {
+        background-color: #fcd34d; /* Amber 300 */
+        border-radius: 0.5rem;
+      }
+      .day-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .admin-nav-btn {
+        @apply px-4 py-2 text-sm font-semibold text-gray-800 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm flex-shrink-0;
+      }
+      .admin-nav-btn.active {
+        @apply bg-brand-dark text-white border-transparent shadow-lg;
+      }
+      .lang-btn.active {
+        background-color: var(--brand-dark);
+        color: white;
+        border-color: var(--brand-dark);
+      }
+
+      /* Custom scrollbar for better mobile experience */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+      }
+    </style>
+  </head>
+  <body class="text-gray-800 antialiased">
+    <!-- Main Container -->
+    <div
+      id="app"
+      class="max-w-lg mx-auto p-4 min-h-screen flex flex-col relative"
+    >
+      <!-- Language Switcher -->
+      <div id="langSwitcher" class="absolute top-4 right-4 z-10">
+        <button
+          data-lang="en"
+          class="lang-btn active px-3 py-1 text-sm font-bold bg-white border rounded-l-md shadow-sm"
+        >
+          ENG
+        </button>
+        <button
+          data-lang="th"
+          class="lang-btn px-3 py-1 text-sm font-bold bg-white border-t border-b border-r rounded-r-md shadow-sm"
+        >
+          ไทย
+        </button>
+      </div>
+
+      <!-- Header -->
+      <header class="text-center pt-8 mb-6 flex flex-col items-center">
+        <img
+          id="appLogo"
+          src="https://storage.googleapis.com/gemini-prod-us-west1-d85694de071a/82bac244-f952-436e-a52-e5a957e72823"
+          alt="Ski Academy Logo"
+          class="w-24 h-24 mb-2 rounded-full object-cover"
+        />
+        <h1 id="appName" class="text-3xl font-bold text-brand-dark">
+          Ski Academy
+        </h1>
+        <p class="text-gray-500" data-translate-key="tagline">
+          Book your session below
+        </p>
+      </header>
+
+      <!-- User View -->
+      <div id="userView" class="flex-grow flex flex-col">
+        <!-- Calendar Container -->
+        <div class="bg-white p-4 rounded-xl shadow-md bg-opacity-90">
+          <!-- Month Navigation -->
+          <div class="flex items-center justify-between mb-4">
+            <button
+              id="prevMonth"
+              class="p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                ></path>
+              </svg>
+            </button>
+            <h2 id="currentMonthYear" class="text-lg font-semibold"></h2>
+            <button
+              id="nextMonth"
+              class="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                ></path>
+              </svg>
+            </button>
+          </div>
+          <!-- Day of Week Headers -->
+          <div
+            id="dayOfWeekHeaders"
+            class="grid grid-cols-7 gap-2 text-center text-xs text-gray-500 font-medium mb-2"
+          ></div>
+          <!-- Calendar Grid -->
+          <div id="calendarGrid" class="grid calendar-grid gap-2">
+            <!-- Days will be dynamically inserted here -->
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div
+          class="flex justify-center items-center space-x-4 mt-4 text-xs text-gray-600 bg-white/70 p-2 rounded-md"
+        >
+          <div class="flex items-center space-x-2">
+            <div class="day-dot bg-green-400"></div>
+            <span data-translate-key="available">Available</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <div class="day-dot bg-yellow-400"></div>
+            <span data-translate-key="limited">Limited</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <div class="day-dot bg-red-400"></div>
+            <span data-translate-key="full">Full</span>
+          </div>
+        </div>
+        <div class="text-center mt-4 space-y-2">
+          <button
+            id="myReservationsBtn"
+            class="text-brand-accent font-semibold hover:underline block"
+            data-translate-key="viewMyReservations"
+          >
+            View My Reservations
+          </button>
+          <div id="lineUserInfo" class="hidden">
+            <p class="text-sm text-gray-600">
+              Logged in as: <span id="lineUserName" class="font-medium"></span>
+            </p>
+            <button
+              id="lineLogoutBtn"
+              class="text-red-500 text-sm hover:underline"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <!-- Business Info Footer -->
+        <div
+          id="businessInfo"
+          class="mt-8 pt-6 border-t border-gray-200 text-sm text-gray-600 space-y-2 text-center"
+        >
+          <div id="addressInfo"></div>
+          <div id="mapLinkInfo"></div>
+          <div id="phoneInfo"></div>
+        </div>
+      </div>
+
+      <!-- Admin View -->
+      <div
+        id="adminView"
+        class="hidden flex-grow flex flex-col space-y-4 bg-white p-4 rounded-xl shadow-md"
+      >
+        <!-- Admin Header and Nav -->
+        <div class="border-b pb-2">
+          <h2 class="text-2xl font-bold" data-translate-key="adminPanelTitle">
+            Admin Panel
+          </h2>
+          <div
+            id="adminNav"
+            class="flex items-center space-x-2 mt-2 overflow-x-auto pb-2"
+          >
+            <!-- Nav buttons will be inserted here -->
+          </div>
+        </div>
+        <!-- Admin Content Area -->
+        <div id="adminContent" class="flex-grow overflow-y-auto">
+          <!-- Content for each view will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Footer for Admin Login -->
+      <footer class="text-center py-4">
+        <button
+          id="toggleAdminViewBtn"
+          class="bg-brand-dark text-white px-6 py-2 rounded-lg shadow-sm hover:bg-gray-700 transition-colors text-sm font-medium"
+          data-translate-key="adminPanel"
+        >
+          Admin Panel
+        </button>
+      </footer>
+    </div>
+
+    <!-- LINE Login Modal -->
+    <div
+      id="lineLoginModal"
+      class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden items-center justify-center p-4"
+    >
+      <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-2">Welcome!</h3>
+          <p class="text-gray-600 text-sm">Please login with LINE to continue</p>
+        </div>
+        
+        <button
+          id="lineLoginBtn"
+          class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12.017 2.011c-5.506 0-9.967 4.461-9.967 9.967 0 1.739.447 3.374 1.232 4.798L2.011 21.99l5.214-1.272c1.424.785 3.059 1.232 4.798 1.232 5.506 0 9.967-4.461 9.967-9.967S17.523 2.011 12.017 2.011zm4.47 7.075c.146.146.146.382 0 .528l-2.646 2.646c-.146.146-.382.146-.528 0l-1.323-1.323-1.323 1.323c-.146.146-.382.146-.528 0L7.493 9.614c-.146-.146-.146-.382 0-.528s.382-.146.528 0l2.117 2.117 1.323-1.323c.146-.146.382-.146.528 0l1.323 1.323 2.117-2.117c.146-.146.382-.146.528 0z"/>
+          </svg>
+          <span>Login with LINE</span>
+        </button>
+        
+        <p class="text-xs text-gray-500 text-center mt-4">
+          By continuing, you agree to our terms of service
+        </p>
+      </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div
+      id="adminLoginModal"
+      class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden items-center justify-center p-4"
+    >
+      <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
+        <h3
+          class="text-2xl font-bold text-center mb-6"
+          data-translate-key="adminLogin"
+        >
+          Admin Login
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <label
+              for="adminUser"
+              class="block text-sm font-medium text-gray-700"
+              data-translate-key="username"
+              >Username</label
+            >
+            <input
+              type="text"
+              id="adminUser"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-accent focus:ring-brand-accent"
+            />
+          </div>
+          <div>
+            <label
+              for="adminPass"
+              class="block text-sm font-medium text-gray-700"
+              data-translate-key="password"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="adminPass"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-accent focus:ring-brand-accent"
+            />
+          </div>
+        </div>
+        <p
+          id="loginError"
+          class="text-red-500 text-sm mt-2 text-center h-4"
+        ></p>
+        <div class="mt-6 flex gap-3">
+          <button
+            id="cancelLoginBtn"
+            class="w-full bg-gray-200 text-gray-700 py-2.5 px-4 rounded-md hover:bg-gray-300 transition-colors font-semibold"
+            data-translate-key="cancel"
+          >
+            Cancel
+          </button>
+          <button
+            id="loginBtn"
+            class="w-full bg-brand-accent text-white py-2.5 px-4 rounded-md hover:bg-brand-accent-hover transition-colors font-semibold"
+            data-translate-key="login"
+          >
+            Login
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Time Slots Modal -->
+    <div
+      id="timeSlotsModal"
+      class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden items-end justify-center"
+    >
+      <div
+        class="bg-white w-full max-w-lg rounded-t-2xl shadow-lg p-6 transform transition-transform translate-y-full max-h-[80vh] flex flex-col"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h3 id="modalDate" class="text-lg font-bold"></h3>
+          <button
+            id="closeSlotsModal"
+            class="p-2 rounded-full hover:bg-gray-100"
+          >
+            &times;
+          </button>
+        </div>
+        <div id="timeSlotsList" class="overflow-y-auto space-y-3 pr-2">
+          <!-- Time slots will be populated here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- My Reservations Modal -->
+    <div
+      id="myReservationsModal"
+      class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden items-end justify-center"
+    >
+      <div
+        class="bg-white w-full max-w-lg rounded-t-2xl shadow-lg p-6 transform transition-transform translate-y-full max-h-[80vh] flex flex-col"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h3
+            class="text-lg font-bold"
+            data-translate-key="myReservationsTitle"
+          >
+            My Reservations
+          </h3>
+          <button
+            id="closeMyReservationsModal"
+            class="p-2 rounded-full hover:bg-gray-100"
+          >
+            &times;
+          </button>
+        </div>
+        <div id="myReservationsList" class="overflow-y-auto space-y-3 pr-2">
+          <!-- User's reservations will be populated here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Payslip Viewer Modal -->
+    <div
+      id="payslipModal"
+      class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden items-center justify-center p-4"
+    >
+      <div class="bg-white rounded-2xl shadow-lg p-4 w-full max-w-md relative">
+        <button
+          id="closePayslipModal"
+          class="absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-lg leading-none text-xl"
+        >
+          &times;
+        </button>
+        <img
+          id="payslipImage"
+          src=""
+          alt="Payslip Image"
+          class="w-full h-auto rounded-lg"
+        />
+      </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div
+      id="bookingModal"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4"
+    >
+      <div class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-sm">
+        <h3
+          class="text-xl font-bold text-center mb-4"
+          data-translate-key="confirmYourBooking"
+        >
+          Confirm Your Booking
+        </h3>
+        <div class="space-y-3 text-gray-600">
+          <p>
+            <strong><span data-translate-key="dateLabel">Date:</span></strong>
+            <span id="bookingDate"></span>
+          </p>
+          <p>
+            <strong><span data-translate-key="timeLabel">Time:</span></strong>
+            <span id="bookingTime"></span>
+          </p>
+          <p>
+            <strong><span data-translate-key="priceLabel">Price:</span></strong>
+            <span
+              id="bookingPrice"
+              class="font-semibold text-brand-dark"
+            ></span>
+            THB
+          </p>
+          <div>
+            <label
+              for="customerName"
+              class="block text-sm font-medium text-gray-700"
+              data-translate-key="fullNameLabel"
+              >Full Name</label
+            >
+            <input
+              type="text"
+              id="customerName"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-accent focus:ring-brand-accent"
+            />
+          </div>
+          <div>
+            <label
+              for="customerMobile"
+              class="block text-sm font-medium text-gray-700"
+              data-translate-key="mobileNumberLabel"
+              >Mobile Number</label
+            >
+            <input
+              type="tel"
+              id="customerMobile"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-accent focus:ring-brand-accent"
+            />
+          </div>
+          <div>
+            <label
+              for="customerEmail"
+              class="block text-sm font-medium text-gray-700"
+              data-translate-key="emailLabel"
+              >Email</label
+            >
+            <input
+              type="email"
+              id="customerEmail"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-accent focus:ring-brand-accent"
+            />
+          </div>
+          <div id="coachSelectContainer" style="display: none">
+            <label
+              for="coachSelect"
+              class="block text-sm font-medium text-gray-700 mt-2 mb-1"
+              data-translate-key="selectCoachLabel"
+              >Select a Coach</label
+            >
+            <select
+              id="coachSelect"
+              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-accent focus:ring-brand-accent"
+            ></select>
+          </div>
+        </div>
+        <div class="mt-6 flex gap-3">
+          <button
+            id="cancelBookingBtn"
+            class="w-full bg-gray-200 text-gray-700 py-2.5 px-4 rounded-md hover:bg-gray-300 transition-colors font-semibold"
+            data-translate-key="cancel"
+          >
+            Cancel
+          </button>
+          <button
+            id="proceedToPaymentBtn"
+            class="w-full bg-brand-accent text-white py-2.5 px-4 rounded-md hover:bg-brand-accent-hover transition-colors font-semibold"
+            data-translate-key="proceedToPayment"
+          >
+            Proceed
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div
+      id="paymentModal"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-sm text-center"
+      >
+        <div class="mb-4">
+          <p
+            class="text-sm text-gray-500"
+            data-translate-key="paymentTimerLabel"
+          >
+            Time remaining:
+          </p>
+          <p id="countdownTimer" class="text-2xl font-bold text-red-600">
+            05:00
+          </p>
+        </div>
+        <h3 class="text-xl font-bold mb-2" data-translate-key="paymentDetails">
+          Payment Details
+        </h3>
+        <p class="text-sm text-gray-500 mb-4">
+          <span data-translate-key="paymentInstruction">Please transfer</span>
+          <strong id="paymentPrice" class="text-brand-dark"></strong> THB
+          <span data-translate-key="paymentInstruction2"
+            >and upload the payslip to confirm.</span
+          >
+        </p>
+        <img
+          id="paymentQrCode"
+          src="https://placehold.co/250x250/EFEFEF/333333?text=QR+Code"
+          alt="QR Code for Payment"
+          class="mx-auto rounded-lg mb-4"
+        />
+        <p class="text-sm">
+          <strong>Bank:</strong> <span id="paymentBankName">K-Bank</span>
+        </p>
+        <p class="text-sm mb-4">
+          <strong>Account:</strong>
+          <span id="paymentBankAccount">123-4-56789-0</span>
+        </p>
+        <div>
+          <label
+            for="payslipUpload"
+            class="w-full inline-block bg-green-100 text-green-800 py-3 px-4 rounded-lg cursor-pointer hover:bg-green-200 transition-colors font-semibold"
+            data-translate-key="attachPayslip"
+          >
+            Attach Payslip
+          </label>
+          <input
+            type="file"
+            id="payslipUpload"
+            class="hidden"
+            accept="image/*"
+          />
+          <p id="fileName" class="text-xs text-gray-500 mt-2 truncate"></p>
+        </div>
+        <div class="mt-6 flex gap-3">
+          <button
+            id="cancelPaymentBtn"
+            class="w-full bg-gray-200 text-gray-700 py-2.5 px-4 rounded-md hover:bg-gray-300 transition-colors font-semibold"
+            data-translate-key="back"
+          >
+            Back
+          </button>
+          <button
+            id="confirmReservationBtn"
+            class="w-full bg-green-600 text-white py-2.5 px-4 rounded-md hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-400"
+            disabled
+            data-translate-key="confirmReservation"
+          >
+            Confirm Reservation
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div
+      id="toast"
+      class="fixed bottom-5 right-5 bg-gray-900 text-white py-2 px-4 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300"
+    >
+      <p id="toastMessage"></p>
+    </div>
+
+    <script type="module">
+      // This script is wrapped in a module, so it runs after the DOM is ready by default.
+
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import {
+        getAuth,
+        signInAnonymously,
+        onAuthStateChanged,
+        signInWithCustomToken,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import {
+        getFirestore,
+        collection,
+        doc,
+        onSnapshot,
+        addDoc,
+        setDoc,
+        query,
+        where,
+        getDocs,
+        deleteDoc,
+        updateDoc,
+        Timestamp,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      import {
+        getStorage,
+        ref,
+        uploadBytes,
+        getDownloadURL,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+      // --- Firebase Setup ---
+      const firebaseConfig = {
+        apiKey: "AIzaSyAdR_Nx-xkvjRa-cRpnP35vzf0ZR0J1k8I",
+        authDomain: "ski-academy-2c7df.firebaseapp.com",
+        projectId: "ski-academy-2c7df",
+        storageBucket: "ski-academy-2c7df.firebasestorage.app",
+        messagingSenderId: "894408491617",
+        appId: "1:894408491617:web:53c278605d61c2a55c6020",
+        measurementId: "G-SKQK20VMRL",
+      };
+      const appId = firebaseConfig.projectId;
+
+      // --- LINE Login Configuration ---
+      const lineLoginChannelId = "2008191948";
+      const lineLoginRedirectUri = "https://bun-line-ao-production.up.railway.app";
+      const runtimeHost = window.location.href.includes('.html') ? window.location.href : window.location.origin;
+      console.log("Runtime host:", runtimeHost);
+      let lineUserToken = null;
+      let lineUserProfile = null;
+
+      let app, db, auth, storage, userId;
+      let reservations = [];
+      let prices = {};
+      let coaches = [];
+      let appearanceSettings = {};
+      let adminLogs = [];
+      let reportChart = null; // To hold the chart instance
+      let countdownInterval = null;
+
+      let currentBooking = {}; // Store booking details temporarily
+      let loggedInAdmin = null; // Store admin session info
+      let selectedDate = null; // Store currently selected date string
+
+      // --- Admin Simulation Data ---
+      const admins = [
+        { user: "admin", pass: "admin", level: "Full Access" },
+        { user: "verifier", pass: "pass123", level: "Verifier" },
+      ];
+
+      // --- LINE Login Functions ---
+      function checkLineToken() {
+        // Check if we have a LINE token in localStorage
+        const token = localStorage.getItem('lineUserToken');
+        const profile = localStorage.getItem('lineUserProfile');
+        
+        if (token && profile) {
+          lineUserToken = token;
+          lineUserProfile = JSON.parse(profile);
+          return true;
+        }
+        return false;
+      }
+
+      function showLineLoginModal() {
+        const lineLoginModal = document.getElementById('lineLoginModal');
+        lineLoginModal.classList.remove('hidden');
+        lineLoginModal.classList.add('flex');
+      }
+
+      function hideLineLoginModal() {
+        const lineLoginModal = document.getElementById('lineLoginModal');
+        lineLoginModal.classList.add('hidden');
+        lineLoginModal.classList.remove('flex');
+      }
+
+      function initiateLINELogin() {
+        const redirectUrl = `${lineLoginRedirectUri}/callback`;
+        const scope = "profile%20openid%20email";
+        const state = Math.random().toString(36).substring(2, 15);
+        
+        // Store state for verification
+        localStorage.setItem('lineLoginState', state);
+        
+        const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${lineLoginChannelId}&redirect_uri=${redirectUrl}&scope=${scope}&state=${state}`;
+        
+        // Redirect to LINE login
+        window.location.href = lineLoginUrl;
+      }
+
+      async function handleCallbackUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const storedState = localStorage.getItem('lineLoginState');
+        
+        if (code && state && state === storedState) {
+          try {
+            // Exchange code for access token with the backend
+            const response = await fetch(`${lineLoginRedirectUri}/callback?code=${code}&state=${state}`);
+            const data = await response.json();
+            console.log("Callback data:", data);
+            
+            // Check if login was successful
+            if (data.code === 200 && data.data) {
+              const { token, profile } = data.data;
+              console.log("Token:", token);
+              console.log("Profile:", profile);
+              
+              // Store the real LINE token and profile
+              localStorage.setItem('lineUserToken', token.access_token);
+              localStorage.setItem('lineUserProfile', JSON.stringify({
+                userId: profile.sub,
+                displayName: profile.name,
+                pictureUrl: profile.picture,
+                email: profile.email,
+                statusMessage: ''
+              }));
+              
+              lineUserToken = token.access_token;
+              lineUserProfile = {
+                userId: profile.sub,
+                displayName: profile.name,
+                pictureUrl: profile.picture,
+                email: profile.email,
+                statusMessage: ''
+              };
+              
+              // Clean up
+              localStorage.removeItem('lineLoginState');
+              
+              // Redirect to runtime host origin
+              window.location.href = runtimeHost;
+              
+              return true;
+            } else {
+              console.error('LINE login failed:', data.message || 'Unknown error');
+              showToast('Login failed. Please try again.', 'error');
+              return false;
+            }
+          } catch (error) {
+            console.error('Error during LINE login callback:', error);
+            showToast('Login failed. Please try again.', 'error');
+            return false;
+          }
+        }
+        
+        return false;
+      }
+
+      function handleSuccessPage() {
+        // Show success message and redirect back to main app
+        showToast('Successfully logged in with LINE!', 'success');
+        
+        setTimeout(() => {
+          // Remove the success parameter and redirect to main app
+          window.location.href = runtimeHost;
+        }, 2000);
+      }
+
+      function handleLineLogout() {
+        // Clear LINE login data
+        localStorage.removeItem('lineUserToken');
+        localStorage.removeItem('lineUserProfile');
+        localStorage.removeItem('lineLoginState');
+        
+        lineUserToken = null;
+        lineUserProfile = null;
+        
+        // Hide user info and show login modal
+        hideLineUserInfo();
+        showLineLoginModal();
+        
+        showToast('Successfully logged out', 'success');
+      }
+
+      function showLineUserInfo() {
+        if (lineUserProfile) {
+          const userInfoEl = document.getElementById('lineUserInfo');
+          const userNameEl = document.getElementById('lineUserName');
+          
+          userNameEl.textContent = lineUserProfile.displayName || 'LINE User';
+          userInfoEl.classList.remove('hidden');
+        }
+      }
+
+      function hideLineUserInfo() {
+        const userInfoEl = document.getElementById('lineUserInfo');
+        userInfoEl.classList.add('hidden');
+      }
+
+      async function initializeFirebase() {
+        try {
+          app = initializeApp(firebaseConfig);
+          db = getFirestore(app);
+          auth = getAuth(app);
+          storage = getStorage(app);
+
+          // Check for LINE login first
+          if (!checkLineToken()) {
+            // Check if we're on callback or success page
+            const currentPath = window.location.pathname;
+            console.log("Current path:", currentPath);
+            const urlParams = new URLSearchParams(window.location.search);
+            console.log("URL params:", urlParams);
+            
+            // Check if this is a callback URL (either /callback path or has code parameter)
+            if (currentPath === '/callback' || urlParams.has('code')) {
+              console.log("Detected callback URL, processing...");
+              const result = await handleCallbackUrl();
+              if (result) {
+                return; // Will redirect to main app
+              }
+            } else if (currentPath === '/success') {
+              handleSuccessPage();
+              return;
+            } else {
+              // Show LINE login modal if no token
+              showLineLoginModal();
+              return;
+            }
+          } else {
+            // User is logged in with LINE, show user info
+            showLineUserInfo();
+          }
+
+          onAuthStateChanged(auth, async (user) => {
+            if (user) {
+              userId = user.uid;
+              if (!appId) {
+                console.error("Firebase Project ID not found!");
+                return;
+              }
+              setupListeners();
+            } else {
+              try {
+                if (
+                  typeof __initial_auth_token !== "undefined" &&
+                  __initial_auth_token
+                ) {
+                  await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                  await signInAnonymously(auth);
+                }
+              } catch (error) {
+                console.error("Sign-in failed:", error);
+                if (
+                  error.code === "auth/custom-token-mismatch" ||
+                  error.code === "auth/invalid-custom-token"
+                ) {
+                  console.warn(
+                    "Custom token mismatch or invalid. Falling back to anonymous sign-in."
+                  );
+                  try {
+                    await signInAnonymously(auth);
+                  } catch (anonError) {
+                    console.error(
+                      "Anonymous sign-in fallback failed:",
+                      anonError
+                    );
+                  }
+                }
+              }
+            }
+          });
+        } catch (e) {
+          console.error("Firebase initialization error:", e);
+          showToast("Error connecting to the service.", "error");
+        }
+      }
+
+      function setupListeners() {
+        const reservationsPath = `artifacts/${appId}/public/data/reservations`;
+        onSnapshot(
+          query(collection(db, reservationsPath)),
+          (snapshot) => {
+            reservations = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            renderCalendar(currentDate);
+            if (loggedInAdmin) {
+              const activeView = document.querySelector(".admin-nav-btn.active")
+                ?.dataset.view;
+              if (activeView === "checkIn") renderCheckInView();
+              if (activeView === "paymentVerification")
+                renderPaymentVerificationView();
+              if (activeView === "allReservations") renderAllReservationsView();
+              if (activeView === "coachReports") renderCoachReportView();
+              if (activeView === "settings") renderSettingsView();
+            }
+          },
+          (err) => console.error("Error fetching reservations:", err)
+        );
+
+        const pricesPath = `artifacts/${appId}/public/data/prices`;
+        onSnapshot(
+          query(collection(db, pricesPath)),
+          (snapshot) => {
+            prices = {};
+            snapshot.docs.forEach((doc) => {
+              prices[doc.id] = doc.data();
+            });
+            if (
+              !document
+                .getElementById("timeSlotsModal")
+                .classList.contains("hidden") &&
+              selectedDate
+            ) {
+              showTimeSlots(new Date(selectedDate.replace(/-/g, "\/")));
+            }
+          },
+          (err) => console.error("Error fetching prices:", err)
+        );
+
+        const coachesPath = `artifacts/${appId}/public/data/coaches`;
+        onSnapshot(
+          query(collection(db, coachesPath)),
+          (snapshot) => {
+            coaches = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            if (loggedInAdmin) {
+              renderCoachSection();
+            }
+            populateCoachSelect();
+          },
+          (err) => console.error("Error fetching coaches:", err)
+        );
+
+        const appearanceDocRef = doc(
+          db,
+          `artifacts/${appId}/public/data/settings`,
+          "appearance"
+        );
+        onSnapshot(appearanceDocRef, (doc) => {
+          appearanceSettings = doc.exists() ? doc.data() : {};
+          applyAppearanceSettings(appearanceSettings);
+          if (loggedInAdmin) renderSettingsView();
+        });
+
+        const logsPath = `artifacts/${appId}/public/data/admin_logs`;
+        onSnapshot(
+          query(collection(db, logsPath)),
+          (snapshot) => {
+            adminLogs = snapshot.docs.map((doc) => {
+              const data = doc.data();
+              const timestamp = data.timestamp?.toDate
+                ? data.timestamp.toDate()
+                : new Date();
+              return { id: doc.id, ...data, timestamp };
+            });
+            if (loggedInAdmin) {
+              const activeView = document.querySelector(".admin-nav-btn.active")
+                ?.dataset.view;
+              if (activeView === "settings") renderAdminLogSection();
+            }
+          },
+          (err) => console.error("Error fetching logs:", err)
+        );
+      }
+
+      async function logAdminActivity(action, details) {
+        if (!loggedInAdmin) return;
+        try {
+          const logsPath = `artifacts/${appId}/public/data/admin_logs`;
+          await addDoc(collection(db, logsPath), {
+            adminUser: loggedInAdmin.user,
+            action,
+            details,
+            timestamp: new Date(),
+          });
+        } catch (error) {
+          console.error("Error logging admin activity:", error);
+        }
+      }
+
+      // --- Appearance Logic ---
+      function applyAppearanceSettings(settings) {
+        const {
+          name = "Ski Academy",
+          logoUrl = "https://storage.googleapis.com/gemini-prod-us-west1-d85694de071a/82bac244-f952-436e-a52-e5a957e72823",
+          bgColor = "#f9fafb",
+          bgImageUrl = "",
+          qrCodeUrl = "https://placehold.co/250x250/EFEFEF/333333?text=QR+Code",
+          bankName = "K-Bank",
+          bankAccount = "123-4-56789-0",
+          address = "123 Ski Slope Rd, Bangkok, Thailand",
+          mapLink = "https://maps.google.com",
+          phone = "081-234-5678",
+        } = settings;
+
+        document.getElementById("appName").textContent = name;
+        document.getElementById("appLogo").src = logoUrl;
+
+        if (bgImageUrl) {
+          document.body.style.backgroundImage = `url('${bgImageUrl}')`;
+          document.body.style.backgroundColor = "";
+        } else {
+          document.body.style.backgroundImage = "none";
+          document.body.style.backgroundColor = bgColor;
+        }
+
+        document.getElementById("paymentQrCode").src = qrCodeUrl;
+        document.getElementById("paymentBankName").textContent = bankName;
+        document.getElementById("paymentBankAccount").textContent = bankAccount;
+
+        document.getElementById(
+          "addressInfo"
+        ).innerHTML = `<strong>${translations[currentLang].addressLabel}</strong> ${address}`;
+        document.getElementById(
+          "mapLinkInfo"
+        ).innerHTML = `<a href="${mapLink}" target="_blank" class="text-blue-600 hover:underline" data-translate-key="viewOnGoogleMaps">View on Google Maps</a>`;
+        document.getElementById(
+          "phoneInfo"
+        ).innerHTML = `<strong>${translations[currentLang].telLabel}</strong> <a href="tel:${phone}" class="text-blue-600 hover:underline">${phone}</a>`;
+        setLanguage(currentLang);
+      }
+
+      async function handleSaveSettings() {
+        const settings = {
+          name: document.getElementById("adminAppName").value,
+          logoUrl: document.getElementById("adminLogoUrl").value,
+          bgColor: document.getElementById("adminBgColor").value,
+          bgImageUrl: document.getElementById("adminBgImageUrl").value,
+          coachSelectionEnabled:
+            document.getElementById("adminEnableCoach").checked,
+          qrCodeUrl: document.getElementById("adminQrCodeUrl").value,
+          bankName: document.getElementById("adminBankName").value,
+          bankAccount: document.getElementById("adminBankAccount").value,
+          address: document.getElementById("adminAddress").value,
+          mapLink: document.getElementById("adminMapLink").value,
+          phone: document.getElementById("adminPhone").value,
+          storagePath: document.getElementById("adminStoragePath").value.trim(),
+        };
+
+        const appearanceDocRef = doc(
+          db,
+          `artifacts/${appId}/public/data/settings`,
+          "appearance"
+        );
+        try {
+          await setDoc(appearanceDocRef, settings, { merge: true });
+          await logAdminActivity(
+            "Updated Settings",
+            "Changed general and appearance settings."
+          );
+          showToast("Settings updated successfully!");
+        } catch (error) {
+          console.error("Error saving settings: ", error);
+          showToast("Failed to save settings.", "error");
+        }
+      }
+
+      // --- DOM Elements ---
+      const calendarGrid = document.getElementById("calendarGrid");
+      const currentMonthYearEl = document.getElementById("currentMonthYear");
+      const prevMonthBtn = document.getElementById("prevMonth");
+      const nextMonthBtn = document.getElementById("nextMonth");
+      const timeSlotsModal = document.getElementById("timeSlotsModal");
+      const timeSlotsList = document.getElementById("timeSlotsList");
+      const modalDateEl = document.getElementById("modalDate");
+      const closeSlotsModalBtn = document.getElementById("closeSlotsModal");
+      const bookingModal = document.getElementById("bookingModal");
+      const paymentModal = document.getElementById("paymentModal");
+      const payslipModal = document.getElementById("payslipModal");
+      const toggleAdminViewBtn = document.getElementById("toggleAdminViewBtn");
+      const userView = document.getElementById("userView");
+      const adminView = document.getElementById("adminView");
+      const adminNav = document.getElementById("adminNav");
+      const adminContent = document.getElementById("adminContent");
+      const adminLoginModal = document.getElementById("adminLoginModal");
+      const myReservationsModal = document.getElementById(
+        "myReservationsModal"
+      );
+
+      // --- State ---
+      let currentDate = new Date();
+      const TOTAL_TREADMILLS = 2;
+      const operatingHours = { start: 10, end: 21 };
+
+      // --- Toast Notification ---
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("toast");
+        const toastMessage = document.getElementById("toastMessage");
+        toastMessage.textContent = message;
+        toast.className = `fixed bottom-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg transform transition-all duration-300 ${
+          type === "error" ? "bg-red-600" : "bg-brand-dark"
+        }`;
+        toast.classList.remove("translate-y-20", "opacity-0");
+        setTimeout(() => {
+          toast.classList.add("translate-y-20", "opacity-0");
+        }, 3000);
+      }
+
+      // --- Date Formatting ---
+      const toYYYYMMDD = (date) => date.toISOString().split("T")[0];
+
+      // --- Calendar Logic ---
+      function renderCalendar(date) {
+        calendarGrid.innerHTML = "";
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        currentMonthYearEl.textContent = date.toLocaleString(
+          translations[currentLang].locale || "en-US",
+          { month: "long", year: "numeric" }
+        );
+
+        const isCurrentMonth =
+          today.getFullYear() === year && today.getMonth() === month;
+        prevMonthBtn.disabled = isCurrentMonth;
+
+        const dayHeaders = translations[currentLang];
+        const daysOfWeek = [
+          dayHeaders.sun,
+          dayHeaders.mon,
+          dayHeaders.tue,
+          dayHeaders.wed,
+          dayHeaders.thu,
+          dayHeaders.fri,
+          dayHeaders.sat,
+        ];
+        document.getElementById("dayOfWeekHeaders").innerHTML = daysOfWeek
+          .map((day) => `<div>${day}</div>`)
+          .join("");
+
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstDayOfMonth; i++)
+          calendarGrid.appendChild(document.createElement("div"));
+
+        for (let i = 1; i <= daysInMonth; i++) {
+          const dayDate = new Date(year, month, i);
+          dayDate.setHours(0, 0, 0, 0);
+
+          if (dayDate < today) {
+            calendarGrid.appendChild(document.createElement("div"));
+            continue;
+          }
+
+          const dayEl = document.createElement("div");
+          const dateStr = toYYYYMMDD(dayDate);
+          dayEl.className =
+            "day flex flex-col items-center justify-center p-2 cursor-pointer transition-colors hover:bg-amber-100 rounded-lg bg-gray-50";
+          if (dateStr === selectedDate) {
+            dayEl.classList.add("selected");
+          }
+
+          dayEl.addEventListener("click", (e) => {
+            document
+              .querySelectorAll(".day.selected")
+              .forEach((d) => d.classList.remove("selected"));
+            e.currentTarget.classList.add("selected");
+            selectedDate = dateStr;
+            showTimeSlots(dayDate);
+          });
+
+          const totalSlotsForDay =
+            (operatingHours.end - operatingHours.start) * TOTAL_TREADMILLS;
+          const confirmedReservationsCount = reservations.filter(
+            (r) => r.date === dateStr && r.status === "confirmed"
+          ).length;
+
+          let statusColor = "bg-green-400";
+          if (
+            confirmedReservationsCount > 0 &&
+            confirmedReservationsCount < totalSlotsForDay
+          ) {
+            statusColor = "bg-yellow-400";
+          } else if (confirmedReservationsCount >= totalSlotsForDay) {
+            statusColor = "bg-red-400";
+          }
+
+          dayEl.innerHTML = `<span class="text-sm font-medium">${i}</span><div class="day-dot ${statusColor} mt-1"></div>`;
+          calendarGrid.appendChild(dayEl);
+        }
+      }
+
+      // --- Modals Logic ---
+      function showTimeSlots(date) {
+        const dateStr = toYYYYMMDD(date);
+        modalDateEl.textContent = date.toLocaleDateString(
+          translations[currentLang].locale || "en-US",
+          { weekday: "long", year: "numeric", month: "long", day: "numeric" }
+        );
+        modalDateEl.dataset.date = dateStr;
+        timeSlotsList.innerHTML = "";
+        const defaultPrice = 1200;
+
+        for (
+          let hour = operatingHours.start;
+          hour < operatingHours.end;
+          hour++
+        ) {
+          const slotPrice = prices[dateStr]?.[hour] ?? defaultPrice;
+          const bookings = reservations.filter((r) => {
+            const isBooked = r.date === dateStr && r.time === hour;
+            const isConfirmed = r.status === "confirmed";
+            const isHeld =
+              r.status === "holding" && r.holdExpiresAt.toDate() > new Date();
+            return isBooked && (isConfirmed || isHeld);
+          }).length;
+
+          const availableSlots = TOTAL_TREADMILLS - bookings;
+          const isFull = availableSlots <= 0;
+
+          const slotEl = document.createElement("div");
+          slotEl.className =
+            "flex items-center justify-between p-3 rounded-lg bg-gray-100";
+          slotEl.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${hour}:00 - ${hour + 1}:00</p>
+                        <p class="text-sm text-gray-500">${
+                          isFull
+                            ? translations[currentLang].fullyBooked
+                            : `${availableSlots} ${translations[currentLang].slotsAvailable}`
+                        }</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-brand-dark">${slotPrice} THB</p>
+                        <button class="mt-1 text-sm bg-brand-accent text-white px-4 py-1 rounded-md hover:bg-brand-accent-hover transition-colors disabled:bg-gray-400" 
+                            data-date="${dateStr}" data-time="${hour}" data-price="${slotPrice}" ${
+            isFull ? "disabled" : ""
+          } data-translate-key="book">
+                            Book
+                        </button>
+                    </div>`;
+          timeSlotsList.appendChild(slotEl);
+        }
+        timeSlotsModal
+          .querySelector("div")
+          .classList.remove("translate-y-full");
+        timeSlotsModal.classList.remove("hidden");
+        timeSlotsModal.classList.add("flex");
+        setLanguage(currentLang); // Apply translations to newly created buttons
+      }
+
+      function closeTimeSlotsModal() {
+        timeSlotsModal.querySelector("div").classList.add("translate-y-full");
+        setTimeout(() => timeSlotsModal.classList.add("hidden"), 300);
+        selectedDate = null;
+        renderCalendar(currentDate);
+      }
+
+      function showMyReservations() {
+        if (!userId) {
+          return;
+        }
+        const listEl = document.getElementById("myReservationsList");
+        const todayStr = toYYYYMMDD(new Date());
+
+        const myRes = reservations
+          .filter((r) => r.userId === userId && r.date >= todayStr)
+          .sort((a, b) => (a.date + a.time > b.date + b.time ? 1 : -1));
+
+        if (myRes.length === 0) {
+          listEl.innerHTML = `<p class="text-center text-gray-500" data-translate-key="noUpcomingReservations">You have no upcoming reservations.</p>`;
+        } else {
+          listEl.innerHTML = "";
+          myRes.forEach((r) => {
+            let statusClass = "text-yellow-600";
+            if (r.status === "confirmed") statusClass = "text-green-600";
+            if (r.status === "rejected") statusClass = "text-red-600";
+
+            const resEl = document.createElement("div");
+            resEl.className = "p-3 rounded-lg bg-gray-100";
+            resEl.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-semibold">${new Date(
+                                  r.date.replace(/-/g, "\/")
+                                ).toLocaleDateString(
+                                  translations[currentLang].locale || "en-US",
+                                  {
+                                    weekday: "short",
+                                    month: "long",
+                                    day: "numeric",
+                                  }
+                                )}</p>
+                                <p class="text-sm text-gray-600">${
+                                  r.time
+                                }:00 - ${r.time + 1}:00</p>
+                            </div>
+                            <p class="text-sm font-bold capitalize ${statusClass}">${
+              r.status
+            }</p>
+                        </div>
+                    `;
+            listEl.appendChild(resEl);
+          });
+        }
+        myReservationsModal
+          .querySelector("div")
+          .classList.remove("translate-y-full");
+        myReservationsModal.classList.remove("hidden");
+        myReservationsModal.classList.add("flex");
+        setLanguage(currentLang);
+      }
+
+      function closeMyReservationsModal() {
+        myReservationsModal
+          .querySelector("div")
+          .classList.add("translate-y-full");
+        setTimeout(() => myReservationsModal.classList.add("hidden"), 300);
+      }
+
+      function showPayslipModal(url) {
+        if (!url || url === "payslip_upload_disabled_for_testing") {
+          showToast(translations[currentLang].noPayslip, "info");
+          return;
+        }
+        const payslipImage = document.getElementById("payslipImage");
+        payslipImage.src = url;
+        payslipModal.classList.remove("hidden");
+        payslipModal.classList.add("flex");
+      }
+
+      function openBookingModal(date, time, price) {
+        currentBooking = { date, time: parseInt(time), price: parseInt(price) };
+        document.getElementById("bookingDate").textContent = new Date(
+          date.replace(/-/g, "\/")
+        ).toLocaleDateString(translations[currentLang].locale || "en-US");
+        document.getElementById("bookingTime").textContent = `${time}:00 - ${
+          parseInt(time) + 1
+        }:00`;
+        document.getElementById("bookingPrice").textContent = price;
+
+        const coachContainer = document.getElementById("coachSelectContainer");
+        if (appearanceSettings.coachSelectionEnabled && coaches.length > 0) {
+          coachContainer.style.display = "block";
+          populateCoachSelect();
+        } else {
+          coachContainer.style.display = "none";
+        }
+
+        bookingModal.classList.remove("hidden");
+        bookingModal.classList.add("flex");
+      }
+
+      async function createTemporaryHold() {
+        const holdExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
+
+        try {
+          const reservationsPath = `artifacts/${appId}/public/data/reservations`;
+          const tempRes = {
+            ...currentBooking,
+            userId,
+            status: "holding",
+            holdExpiresAt: Timestamp.fromDate(holdExpiresAt),
+          };
+          const docRef = await addDoc(
+            collection(db, reservationsPath),
+            tempRes
+          );
+          currentBooking.id = docRef.id;
+          openPaymentModal(holdExpiresAt);
+        } catch (error) {
+          console.error("Error creating temporary hold:", error);
+          showToast("Could not reserve slot. Please try again.", "error");
+        }
+      }
+
+      function openPaymentModal(expiresAt) {
+        bookingModal.classList.add("hidden");
+        document.getElementById("paymentPrice").textContent =
+          currentBooking.price;
+        document.getElementById("fileName").textContent = "";
+        document.getElementById("payslipUpload").value = "";
+        document.getElementById("confirmReservationBtn").disabled = true;
+        paymentModal.classList.remove("hidden");
+        paymentModal.classList.add("flex");
+
+        // Start countdown timer
+        if (countdownInterval) clearInterval(countdownInterval);
+        const timerEl = document.getElementById("countdownTimer");
+        countdownInterval = setInterval(async () => {
+          const now = new Date();
+          const remaining = Math.max(0, expiresAt.getTime() - now.getTime());
+          const minutes = Math.floor((remaining / 1000 / 60) % 60);
+          const seconds = Math.floor((remaining / 1000) % 60);
+          timerEl.textContent = `${minutes
+            .toString()
+            .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+          if (remaining === 0) {
+            clearInterval(countdownInterval);
+            showToast("Your session hold has expired.", "error");
+            await deleteTemporaryHold(currentBooking.id);
+            closeAllModals();
+          }
+        }, 1000);
+      }
+
+      async function deleteTemporaryHold(holdId) {
+        if (!holdId) return;
+        try {
+          const holdDocRef = doc(
+            db,
+            `artifacts/${appId}/public/data/reservations`,
+            holdId
+          );
+          await deleteDoc(holdDocRef);
+        } catch (error) {
+          console.error("Error deleting temporary hold:", error);
+        }
+      }
+
+      async function handleConfirmReservation() {
+        if (countdownInterval) clearInterval(countdownInterval);
+        const confirmBtn = document.getElementById("confirmReservationBtn");
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Submitting...";
+
+        try {
+          if (!currentBooking.id) throw new Error("Booking session expired.");
+          const file = currentBooking.payslipFile;
+          if (!file) throw new Error("Please attach a payslip image.");
+
+          const basePath =
+            appearanceSettings.storagePath ||
+            `artifacts/${appId}/public/payslips`;
+
+          if (basePath.startsWith("http")) {
+            throw new Error("Invalid Storage Path configured by admin.");
+          }
+
+          const storagePath = `${basePath}/${userId}_${Date.now()}_${
+            file.name
+          }`;
+          const storageRef = ref(storage, storagePath);
+
+          const snapshot = await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+
+          const { payslipFile, ...bookingData } = currentBooking;
+          const finalReservation = {
+            ...bookingData,
+            status: "pending",
+            payslipUrl: downloadURL,
+            holdExpiresAt: null, // Clear expiry
+          };
+
+          const resDocRef = doc(
+            db,
+            `artifacts/${appId}/public/data/reservations`,
+            currentBooking.id
+          );
+          await setDoc(resDocRef, finalReservation, { merge: true });
+
+          showToast("Reservation submitted for verification!");
+          closeAllModals();
+        } catch (error) {
+          console.error("Error confirming reservation: ", error);
+          let errorMessage =
+            error.message || "Failed to submit reservation. Please try again.";
+          // ... error code handling ...
+          showToast(errorMessage, "error");
+          if (currentBooking.id) await deleteTemporaryHold(currentBooking.id);
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Confirm Reservation";
+          setLanguage(currentLang);
+        }
+      }
+      function closeAllModals() {
+        [
+          timeSlotsModal,
+          bookingModal,
+          paymentModal,
+          adminLoginModal,
+          myReservationsModal,
+          payslipModal,
+        ].forEach((m) => m.classList.add("hidden"));
+        currentBooking = {};
+        if (countdownInterval) clearInterval(countdownInterval);
+      }
+
+      // --- Admin Logic ---
+      function handleAdminLogin() {
+        const user = document.getElementById("adminUser").value;
+        const pass = document.getElementById("adminPass").value;
+        const foundAdmin = admins.find(
+          (a) => a.user === user && a.pass === pass
+        );
+        if (foundAdmin) {
+          loggedInAdmin = foundAdmin;
+          adminLoginModal.classList.add("hidden");
+          userView.classList.add("hidden");
+          adminView.classList.remove("hidden");
+          adminView.classList.add("flex");
+          toggleAdminViewBtn.textContent = "Logout";
+          logAdminActivity("Logged In", `Admin user '${user}' logged in.`);
+          renderAdminView();
+        } else {
+          document.getElementById("loginError").textContent =
+            "Invalid credentials.";
+        }
+      }
+
+      function handleAdminLogout() {
+        logAdminActivity(
+          "Logged Out",
+          `Admin user '${loggedInAdmin.user}' logged out.`
+        );
+        loggedInAdmin = null;
+        userView.classList.remove("hidden");
+        adminView.classList.add("hidden");
+        toggleAdminViewBtn.textContent = "Admin Panel";
+        setLanguage(currentLang);
+      }
+
+      function renderAdminView() {
+        if (!loggedInAdmin) return;
+
+        const navItems = [
+          { id: "checkIn", key: "todaysCheckin" },
+          { id: "paymentVerification", key: "paymentVerification" },
+          { id: "allReservations", key: "allReservations" },
+          { id: "coachReports", key: "coachReports" },
+          { id: "reports", key: "reports" },
+          { id: "settings", key: "settings" },
+        ];
+
+        adminNav.innerHTML = navItems
+          .map(
+            (item) => `
+                <button data-view="${item.id}" class="admin-nav-btn" data-translate-key="${item.key}"></button>
+            `
+          )
+          .join("");
+
+        adminContent.innerHTML = navItems
+          .map(
+            (item) => `
+                <div id="${item.id}View" class="hidden space-y-4"></div>
+            `
+          )
+          .join("");
+
+        // Set default view
+        showAdminSubView("checkIn");
+      }
+
+      function showAdminSubView(viewId) {
+        // Hide all content views
+        document
+          .querySelectorAll("#adminContent > div")
+          .forEach((div) => div.classList.add("hidden"));
+        // Deactivate all nav buttons
+        document
+          .querySelectorAll(".admin-nav-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+
+        // Activate the selected button and view
+        document
+          .querySelector(`[data-view="${viewId}"]`)
+          .classList.add("active");
+        const viewEl = document.getElementById(`${viewId}View`);
+        viewEl.classList.remove("hidden");
+
+        // Render the content for the selected view
+        switch (viewId) {
+          case "checkIn":
+            renderCheckInView();
+            break;
+          case "paymentVerification":
+            renderPaymentVerificationView();
+            break;
+          case "allReservations":
+            renderAllReservationsView();
+            break;
+          case "coachReports":
+            renderCoachReportView();
+            break;
+          case "reports":
+            renderReportsView();
+            break;
+          case "settings":
+            renderSettingsView();
+            break;
+        }
+        setLanguage(currentLang);
+      }
+
+      function renderCheckInView() {
+        const view = document.getElementById("checkInView");
+        if (!view) return;
+        const todayStr = toYYYYMMDD(new Date());
+
+        const todaysReservations = reservations
+          .filter((r) => r.date === todayStr && r.status === "confirmed")
+          .sort((a, b) => a.time - b.time);
+
+        let content = `<h3 class="font-semibold text-lg" data-translate-key="todaysConfirmedReservations">Today's Confirmed Reservations</h3>`;
+        if (todaysReservations.length === 0) {
+          content += `<p class="text-sm text-gray-500" data-translate-key="noConfirmedReservationsToday">No confirmed reservations for today.</p>`;
+        } else {
+          content += `<div class="space-y-3">`;
+          todaysReservations.forEach((res) => {
+            const coachName = res.coachId
+              ? coaches.find((c) => c.id === res.coachId)?.name || "N/A"
+              : "N/A";
+            content += `
+                        <div class="bg-gray-50 p-3 rounded-lg border">
+                            <p class="font-bold">${res.time}:00 - ${
+              res.time + 1
+            }:00</p>
+                            <p><strong><span data-translate-key="nameLabel">Name:</span></strong> ${
+                              res.name
+                            }</p>
+                            <p><strong><span data-translate-key="contactLabel">Contact:</span></strong> ${
+                              res.mobile
+                            }</p>
+                            <p><strong><span data-translate-key="coachLabel">Coach:</span></strong> ${coachName}</p>
+                        </div>
+                    `;
+          });
+          content += `</div>`;
+        }
+        view.innerHTML = content;
+      }
+
+      function renderPaymentVerificationView() {
+        const view = document.getElementById("paymentVerificationView");
+        if (!view) return;
+
+        let content = `<h3 class="font-semibold text-lg" data-translate-key="pendingReservations">Pending Reservations</h3>`;
+        const pending = reservations
+          .filter((r) => r.status === "pending")
+          .sort(
+            (a, b) =>
+              (a.createdAt?.toDate() || 0) - (b.createdAt?.toDate() || 0)
+          );
+
+        if (pending.length === 0) {
+          content += `<p class="text-sm text-gray-500" data-translate-key="noPendingReservations">No pending reservations.</p>`;
+        } else {
+          content += `<div class="space-y-3">`;
+          pending.forEach((res) => {
+            const coachName = res.coachId
+              ? coaches.find((c) => c.id === res.coachId)?.name || "N/A"
+              : "N/A";
+            content += `
+                        <div class="bg-gray-50 p-3 rounded-lg border">
+                            <p><strong><span data-translate-key="dateLabel">Date:</span></strong> ${
+                              res.date
+                            } at ${res.time}:00</p>
+                            <p><strong><span data-translate-key="nameLabel">Name:</span></strong> ${
+                              res.name
+                            }</p>
+                            <p><strong><span data-translate-key="contactLabel">Contact:</span></strong> ${
+                              res.email
+                            } / ${res.mobile}</p>
+                            <p><strong><span data-translate-key="coachLabel">Coach:</span></strong> ${coachName}</p>
+                            <button class="view-slip-btn text-xs text-blue-600 cursor-pointer hover:underline" data-slip-url="${
+                              res.payslipUrl || ""
+                            }" data-translate-key="viewPayslip">View Payslip</button>
+                            <div class="mt-2 flex gap-2">
+                                <button class="approve-btn text-sm bg-green-500 text-white px-3 py-1 rounded" data-id="${
+                                  res.id
+                                }" data-name="${
+              res.name
+            }" data-translate-key="approve">Approve</button>
+                                <button class="reject-btn text-sm bg-red-500 text-white px-3 py-1 rounded" data-id="${
+                                  res.id
+                                }" data-name="${
+              res.name
+            }" data-translate-key="reject">Reject</button>
+                            </div>
+                        </div>`;
+          });
+          content += `</div>`;
+        }
+        view.innerHTML = content;
+        setLanguage(currentLang);
+      }
+
+      function renderAllReservationsView() {
+        const view = document.getElementById("allReservationsView");
+        if (!view) return;
+        const todayStr = toYYYYMMDD(new Date());
+
+        view.innerHTML = `
+                <h3 class="font-semibold text-lg" data-translate-key="browseAllReservations">Browse All Reservations</h3>
+                <div class="flex items-center space-x-2">
+                    <label for="reservationDate" class="text-sm font-medium" data-translate-key="selectDate">Select Date:</label>
+                    <input type="date" id="reservationDate" value="${todayStr}" class="block rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div id="allReservationsList" class="mt-4 space-y-3"></div>`;
+
+        const datePicker = view.querySelector("#reservationDate");
+        datePicker.addEventListener("change", () =>
+          displayReservationsForDate(datePicker.value)
+        );
+        displayReservationsForDate(todayStr); // Initial display
+      }
+
+      function displayReservationsForDate(dateStr) {
+        const listEl = document.getElementById("allReservationsList");
+        if (!listEl) return;
+        const dayReservations = reservations
+          .filter((r) => r.date === dateStr)
+          .sort((a, b) => a.time - b.time);
+
+        if (dayReservations.length === 0) {
+          listEl.innerHTML = `<p class="text-sm text-gray-500" data-translate-key="noReservationsForDate">No reservations for this date.</p>`;
+        } else {
+          listEl.innerHTML = dayReservations
+            .map((res) => {
+              let statusClass = "text-yellow-600";
+              if (res.status === "confirmed") statusClass = "text-green-600";
+              if (res.status === "rejected") statusClass = "text-red-600";
+              const coachName = res.coachId
+                ? coaches.find((c) => c.id === res.coachId)?.name || "N/A"
+                : "N/A";
+              return `
+                        <div class="bg-gray-50 p-3 rounded-lg border">
+                            <div class="flex justify-between items-start">
+                                 <div>
+                                    <p class="font-bold">${res.time}:00 - ${
+                res.time + 1
+              }:00</p>
+                                    <p><strong><span data-translate-key="nameLabel">Name:</span></strong> ${
+                                      res.name
+                                    }</p>
+                                    <p><strong><span data-translate-key="contactLabel">Contact:</span></strong> ${
+                                      res.mobile
+                                    }</p>
+                                    <p><strong><span data-translate-key="coachLabel">Coach:</span></strong> ${coachName}</p>
+                                 </div>
+                                 <p class="text-sm font-bold capitalize ${statusClass}">${
+                res.status
+              }</p>
+                            </div>
+                        </div>
+                     `;
+            })
+            .join("");
+        }
+        setLanguage(currentLang);
+      }
+
+      function renderCoachReportView() {
+        const view = document.getElementById("coachReportsView");
+        if (!view) return;
+        const today = new Date();
+        const monthStr = `${today.getFullYear()}-${(today.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}`;
+
+        view.innerHTML = `
+                <h3 class="font-semibold text-lg" data-translate-key="coachReportTitle">Coach Hours Report</h3>
+                <div class="flex items-center space-x-2">
+                     <label for="coachReportMonth" class="text-sm font-medium" data-translate-key="selectMonth">Select Month:</label>
+                     <input type="month" id="coachReportMonth" value="${monthStr}" class="block rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div id="coachReportResults" class="mt-4 space-y-3"></div>
+            `;
+        const monthPicker = view.querySelector("#coachReportMonth");
+        monthPicker.addEventListener("change", () =>
+          generateCoachReport(monthPicker.value)
+        );
+        generateCoachReport(monthStr);
+      }
+
+      function generateCoachReport(monthStr) {
+        const resultsEl = document.getElementById("coachReportResults");
+        if (!resultsEl || !monthStr) return;
+
+        const [year, month] = monthStr.split("-");
+        const startDate = `${year}-${month}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        const endDateCorrect = `${year}-${month}-${lastDay}`;
+
+        const coachHours = {};
+
+        reservations.forEach((res) => {
+          if (
+            res.status === "confirmed" &&
+            res.date >= startDate &&
+            res.date <= endDateCorrect &&
+            res.coachId
+          ) {
+            if (!coachHours[res.coachId]) {
+              coachHours[res.coachId] = {
+                count: 0,
+                name:
+                  coaches.find((c) => c.id === res.coachId)?.name ||
+                  "Unknown Coach",
+              };
+            }
+            coachHours[res.coachId].count++;
+          }
+        });
+
+        if (Object.keys(coachHours).length === 0) {
+          resultsEl.innerHTML = `<p class="text-sm text-gray-500" data-translate-key="noCoachData">No coach data for this period.</p>`;
+        } else {
+          resultsEl.innerHTML = `
+                    <div class="font-semibold grid grid-cols-2 gap-2 border-b pb-2">
+                        <div data-translate-key="coachName">Coach Name</div>
+                        <div data-translate-key="totalHours">Total Hours</div>
+                    </div>
+                    ${Object.values(coachHours)
+                      .map(
+                        (coach) => `
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>${coach.name}</div>
+                            <div>${coach.count}</div>
+                        </div>
+                    `
+                      )
+                      .join("")}
+                `;
+        }
+        setLanguage(currentLang);
+      }
+
+      function renderReportsView() {
+        const view = document.getElementById("reportsView");
+        if (!view) return;
+        const todayStr = toYYYYMMDD(new Date());
+        view.innerHTML = `
+                <h3 class="font-semibold text-lg" data-translate-key="occupancyReport">Occupancy Report</h3>
+                <div class="flex flex-wrap items-center gap-4">
+                    <input type="date" id="reportDate" value="${todayStr}" class="block rounded-md border-gray-300 shadow-sm">
+                    <div id="reportModeSelector" class="flex items-center space-x-2 text-sm">
+                       <button data-mode="day" class="report-mode-btn active" data-translate-key="reportDay">Day</button>
+                       <button data-mode="week" class="report-mode-btn" data-translate-key="reportWeek">Week</button>
+                       <button data-mode="month" class="report-mode-btn" data-translate-key="reportMonth">Month</button>
+                    </div>
+                </div>
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <canvas id="occupancyChart"></canvas>
+                </div>
+                <div id="reportSummary" class="text-center text-sm text-gray-600 mt-2"></div>`;
+
+        updateReport(); // Initial report for today
+      }
+
+      function updateReport() {
+        const datePicker = document.getElementById("reportDate");
+        if (!datePicker) return;
+        const selectedDate = new Date(datePicker.value.replace(/-/g, "\/"));
+        const activeMode = document.querySelector(".report-mode-btn.active")
+          .dataset.mode;
+
+        let startDate, endDate, periodLabel;
+
+        if (activeMode === "day") {
+          startDate = endDate = selectedDate;
+          periodLabel = selectedDate.toLocaleDateString(
+            translations[currentLang].locale || "en-US"
+          );
+        } else if (activeMode === "week") {
+          const dayOfWeek = selectedDate.getDay();
+          startDate = new Date(selectedDate);
+          startDate.setDate(selectedDate.getDate() - dayOfWeek);
+          endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + 6);
+          periodLabel = `${
+            translations[currentLang].reportWeekOf
+          } ${startDate.toLocaleDateString(
+            translations[currentLang].locale || "en-US"
+          )}`;
+        } else {
+          // month
+          startDate = new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth(),
+            1
+          );
+          endDate = new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth() + 1,
+            0
+          );
+          periodLabel = selectedDate.toLocaleString(
+            translations[currentLang].locale || "en-US",
+            { month: "long", year: "numeric" }
+          );
+        }
+
+        const startDateStr = toYYYYMMDD(startDate);
+        const endDateStr = toYYYYMMDD(endDate);
+
+        const filteredReservations = reservations.filter(
+          (r) =>
+            r.date >= startDateStr &&
+            r.date <= endDateStr &&
+            r.status === "confirmed"
+        );
+
+        const dayDiff = (endDate - startDate) / (1000 * 60 * 60 * 24) + 1;
+        const totalSlots =
+          (operatingHours.end - operatingHours.start) *
+          TOTAL_TREADMILLS *
+          dayDiff;
+        const soldSlots = filteredReservations.length;
+        const unsoldSlots = totalSlots - soldSlots;
+
+        drawPieChart(soldSlots, unsoldSlots);
+
+        const summaryEl = document.getElementById("reportSummary");
+        const occupancy = ((soldSlots / totalSlots) * 100 || 0).toFixed(1);
+        summaryEl.innerHTML = `
+                <span data-translate-key="reportFor">Report for</span> ${periodLabel}: 
+                ${soldSlots} <span data-translate-key="reportOf">of</span> ${totalSlots} 
+                <span data-translate-key="reportSlotsSold">slots sold</span> (${occupancy}%).
+            `;
+        setLanguage(currentLang);
+      }
+
+      function drawPieChart(sold, unsold) {
+        const ctx = document.getElementById("occupancyChart")?.getContext("2d");
+        if (!ctx) return;
+        if (reportChart) {
+          reportChart.destroy();
+        }
+        reportChart = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: [
+              translations[currentLang].slotsSold,
+              translations[currentLang].slotsUnsold,
+            ],
+            datasets: [
+              {
+                data: [sold, unsold],
+                backgroundColor: ["#10b981", "#f3f4f6"],
+                borderColor: ["#059669", "#e5e7eb"],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: "top" },
+              title: {
+                display: true,
+                text: translations[currentLang].slotOccupancy,
+              },
+            },
+          },
+        });
+      }
+
+      function renderSettingsView() {
+        const view = document.getElementById("settingsView");
+        if (!view) return;
+        view.innerHTML = `
+                <div id="appearanceSection" class="space-y-4 border-b pb-6 mb-6"></div>
+                <div id="priceSection" class="space-y-4 border-b pb-6 mb-6"></div>
+                <div id="coachSection" class="space-y-4 border-b pb-6 mb-6"></div>
+                <div id="adminLogSection" class="space-y-4 border-b pb-6 mb-6"></div>
+                <div id="adminMgmtSection" class="space-y-4"></div>
+            `;
+        renderAppearanceSection();
+        renderPriceSection();
+        renderCoachSection();
+        renderAdminLogSection();
+        renderAdminMgmtSection();
+      }
+
+      function renderAppearanceSection() {
+        const section = document.getElementById("appearanceSection");
+        if (!section) return;
+        section.innerHTML = `
+                <h3 class="font-semibold text-lg" data-translate-key="generalAppearanceSettings">General & Appearance Settings</h3>
+                <div>
+                    <label for="adminAppName" class="block text-sm font-medium text-gray-700" data-translate-key="academyName">Academy Name</label>
+                    <input type="text" id="adminAppName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="adminLogoUrl" class="block text-sm font-medium text-gray-700" data-translate-key="logoUrl">Logo URL</label>
+                    <input type="text" id="adminLogoUrl" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="adminBgColor" class="block text-sm font-medium text-gray-700" data-translate-key="bgColor">BG Color</label>
+                        <input type="color" id="adminBgColor" value="#f9fafb" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-10">
+                    </div>
+                    <div>
+                        <label for="adminBgImageUrl" class="block text-sm font-medium text-gray-700" data-translate-key="bgImageUrl">BG Image URL</label>
+                         <input type="text" id="adminBgImageUrl" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                </div>
+                 <div class="flex items-center justify-between pt-4 border-t mt-4">
+                    <span class="flex-grow flex flex-col"><span class="text-sm font-medium text-gray-900" id="coachToggleLabel" data-translate-key="enableCoachSelection">Enable Coach Selection</span></span>
+                    <label for="adminEnableCoach" class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="adminEnableCoach" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-400 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-accent peer-disabled:bg-gray-100 peer-disabled:cursor-not-allowed"></div>
+                    </label>
+                </div>
+                <h3 class="font-semibold text-lg pt-4 border-t mt-4" data-translate-key="paymentSettings">Payment Settings</h3>
+                <div>
+                    <label for="adminQrCodeUrl" class="block text-sm font-medium text-gray-700" data-translate-key="qrCodeUrl">QR Code Image URL</label>
+                    <input type="text" id="adminQrCodeUrl" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="adminBankName" class="block text-sm font-medium text-gray-700" data-translate-key="bankName">Bank Name</label>
+                        <input type="text" id="adminBankName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                     <div>
+                        <label for="adminBankAccount" class="block text-sm font-medium text-gray-700" data-translate-key="accountNo">Account No.</label>
+                        <input type="text" id="adminBankAccount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                </div>
+                <h3 class="font-semibold text-lg pt-4 border-t mt-4" data-translate-key="businessInfo">Business Information</h3>
+                 <div>
+                    <label for="adminAddress" class="block text-sm font-medium text-gray-700" data-translate-key="address">Address</label>
+                    <input type="text" id="adminAddress" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                 <div>
+                    <label for="adminMapLink" class="block text-sm font-medium text-gray-700" data-translate-key="googleMapsLink">Google Maps Link</label>
+                    <input type="text" id="adminMapLink" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                 <div>
+                    <label for="adminPhone" class="block text-sm font-medium text-gray-700" data-translate-key="phoneNumber">Phone Number</label>
+                    <input type="text" id="adminPhone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <h3 class="font-semibold text-lg pt-4 border-t mt-4" data-translate-key="advancedSettings">Advanced Settings</h3>
+                <div>
+                    <label for="adminStoragePath" class="block text-sm font-medium text-gray-700" data-translate-key="storagePath">Storage Upload Path</label>
+                    <input type="text" id="adminStoragePath" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <p class="mt-1 text-xs text-gray-500" data-translate-key="storagePathHelp">The cloud storage path for payslip uploads. Change only if uploads fail.</p>
+                </div>
+                <button id="saveSettingsBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-semibold mt-4" data-translate-key="saveAllSettings">Save All Settings</button>`;
+        populateAppearanceForm(appearanceSettings);
+      }
+
+      function populateAppearanceForm(settings) {
+        const view = document.getElementById("settingsView");
+        if (!view) return;
+        document.getElementById("adminAppName").value =
+          settings.name || "Ski Academy";
+        document.getElementById("adminLogoUrl").value = settings.logoUrl || "";
+        document.getElementById("adminBgColor").value =
+          settings.bgColor || "#f9fafb";
+        document.getElementById("adminBgImageUrl").value =
+          settings.bgImageUrl || "";
+
+        const coachToggle = document.getElementById("adminEnableCoach");
+        const coachToggleLabel = document.getElementById("coachToggleLabel");
+        if (coaches.length === 0) {
+          coachToggle.checked = false;
+          coachToggle.disabled = true;
+          coachToggleLabel.dataset.translateKey =
+            "enableCoachSelectionDisabled";
+        } else {
+          coachToggle.checked = settings.coachSelectionEnabled || false;
+          coachToggle.disabled = false;
+          coachToggleLabel.dataset.translateKey = "enableCoachSelection";
+        }
+
+        document.getElementById("adminQrCodeUrl").value =
+          settings.qrCodeUrl || "";
+        document.getElementById("adminBankName").value =
+          settings.bankName || "";
+        document.getElementById("adminBankAccount").value =
+          settings.bankAccount || "";
+        document.getElementById("adminAddress").value = settings.address || "";
+        document.getElementById("adminMapLink").value = settings.mapLink || "";
+        document.getElementById("adminPhone").value = settings.phone || "";
+        document.getElementById("adminStoragePath").value =
+          settings.storagePath || `artifacts/${appId}/public/payslips`;
+      }
+
+      function renderVerificationSection() {
+        const section = document.getElementById("verificationSection");
+        if (!section) return;
+        section.innerHTML = `<h3 class="font-semibold text-lg" data-translate-key="pendingReservations">Pending Reservations</h3><div id="pendingList" class="space-y-3"></div>`;
+        const pendingList = document.getElementById("pendingList");
+        const pending = reservations
+          .filter((r) => r.status === "pending")
+          .sort(
+            (a, b) =>
+              (a.createdAt?.toDate() || 0) - (b.createdAt?.toDate() || 0)
+          );
+
+        if (pending.length === 0) {
+          pendingList.innerHTML = `<p class="text-sm text-gray-500" data-translate-key="noPendingReservations">No pending reservations.</p>`;
+          return;
+        }
+        pendingList.innerHTML = "";
+        pending.forEach((res) => {
+          const coachName = res.coachId
+            ? coaches.find((c) => c.id === res.coachId)?.name || "N/A"
+            : "N/A";
+          const resEl = document.createElement("div");
+          resEl.className = "bg-gray-50 p-3 rounded-lg border";
+          resEl.innerHTML = `
+                    <p><strong><span data-translate-key="dateLabel">Date:</span></strong> ${
+                      res.date
+                    } at ${res.time}:00</p>
+                    <p><strong><span data-translate-key="nameLabel">Name:</span></strong> ${
+                      res.name
+                    }</p>
+                    <p><strong><span data-translate-key="contactLabel">Contact:</span></strong> ${
+                      res.email
+                    } / ${res.mobile}</p>
+                    <p><strong><span data-translate-key="coachLabel">Coach:</span></strong> ${coachName}</p>
+                    <button class="view-slip-btn text-xs text-blue-600 cursor-pointer hover:underline" data-slip-url="${
+                      res.payslipUrl || ""
+                    }" data-translate-key="viewPayslip">View Payslip</button>
+                    <div class="mt-2 flex gap-2">
+                        <button class="approve-btn text-sm bg-green-500 text-white px-3 py-1 rounded" data-id="${
+                          res.id
+                        }" data-name="${
+            res.name
+          }" data-translate-key="approve">Approve</button>
+                        <button class="reject-btn text-sm bg-red-500 text-white px-3 py-1 rounded" data-id="${
+                          res.id
+                        }" data-name="${
+            res.name
+          }" data-translate-key="reject">Reject</button>
+                    </div>`;
+          pendingList.appendChild(resEl);
+        });
+      }
+
+      function renderPriceSection() {
+        const section = document.getElementById("priceSection");
+        if (!section) return;
+        section.innerHTML = `
+                <h3 class="font-semibold text-lg" data-translate-key="setBulkPrice">Set Bulk Price by Range</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="bulkPriceStartDate" class="block text-sm font-medium text-gray-700" data-translate-key="startDate">Start Date</label>
+                        <input type="date" id="bulkPriceStartDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                    <div>
+                        <label for="bulkPriceEndDate" class="block text-sm font-medium text-gray-700" data-translate-key="endDate">End Date</label>
+                        <input type="date" id="bulkPriceEndDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mt-4" data-translate-key="daysOfWeek">Days of the Week</label>
+                    <div id="dayOfWeekSelector" class="mt-2 grid grid-cols-4 gap-2 text-sm">
+                        <!-- Checkboxes will be dynamically inserted here -->
+                    </div>
+                    <div class="mt-2 flex gap-2 text-xs">
+                        <button id="selectWeekdaysBtn" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300" data-translate-key="weekdays">Weekdays</button>
+                        <button id="selectWeekendsBtn" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300" data-translate-key="weekends">Weekends</button>
+                        <button id="selectAllDaysBtn" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300" data-translate-key="all">All</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label for="bulkPriceStartTime" class="block text-sm font-medium text-gray-700" data-translate-key="startTime">Start Time</label>
+                        <select id="bulkPriceStartTime" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></select>
+                    </div>
+                    <div>
+                        <label for="bulkPriceEndTime" class="block text-sm font-medium text-gray-700" data-translate-key="endTime">End Time</label>
+                        <select id="bulkPriceEndTime" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></select>
+                    </div>
+                </div>
+                <div>
+                    <label for="bulkSlotPrice" class="block text-sm font-medium text-gray-700 mt-4" data-translate-key="priceTHB">Price (THB)</label>
+                    <input type="number" id="bulkSlotPrice" placeholder="e.g., 1500" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <button id="setBulkPriceBtn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors font-semibold mt-4 disabled:bg-gray-400" data-translate-key="applyBulkPrice">Apply Bulk Price</button>
+                <hr class="my-6">
+                <h3 class="font-semibold text-lg" data-translate-key="setSpecificPrice">Set Specific Slot Price (Override)</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="priceDate" class="block text-sm font-medium text-gray-700" data-translate-key="date">Date</label>
+                        <input type="date" id="priceDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-accent focus:ring-brand-accent">
+                    </div>
+                    <div>
+                        <label for="priceTime" class="block text-sm font-medium text-gray-700" data-translate-key="timeSlot">Time Slot</label>
+                        <select id="priceTime" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-accent focus:ring-brand-accent"></select>
+                    </div>
+                </div>
+                <div>
+                    <label for="slotPrice" class="block text-sm font-medium text-gray-700" data-translate-key="priceTHB">Price (THB)</label>
+                    <input type="number" id="slotPrice" placeholder="e.g., 1500" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-accent focus:ring-brand-accent">
+                </div>
+                <button id="setPriceBtn" class="w-full bg-brand-dark text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors font-semibold mt-4" data-translate-key="setPrice">Set Price</button>`;
+
+        const dayNames = [
+          translations[currentLang].sun,
+          translations[currentLang].mon,
+          translations[currentLang].tue,
+          translations[currentLang].wed,
+          translations[currentLang].thu,
+          translations[currentLang].fri,
+          translations[currentLang].sat,
+        ];
+        const daySelector = document.getElementById("dayOfWeekSelector");
+        daySelector.innerHTML = dayNames
+          .map(
+            (day, index) => `
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" value="${index}" class="rounded border-gray-300 text-brand-accent shadow-sm focus:ring-brand-accent">
+                    <span>${day}</span>
+                </label>
+            `
+          )
+          .join("");
+
+        const startTimeSelect = document.getElementById("bulkPriceStartTime");
+        const endTimeSelect = document.getElementById("bulkPriceEndTime");
+        for (
+          let hour = operatingHours.start;
+          hour < operatingHours.end;
+          hour++
+        ) {
+          startTimeSelect.innerHTML += `<option value="${hour}">${hour}:00</option>`;
+          endTimeSelect.innerHTML += `<option value="${hour + 1}">${
+            hour + 1
+          }:00</option>`;
+        }
+        endTimeSelect.value = operatingHours.end;
+
+        populateAdminTimeSelect();
+      }
+
+      async function handleSetBulkPrice() {
+        const startDateStr =
+          document.getElementById("bulkPriceStartDate").value;
+        const endDateStr = document.getElementById("bulkPriceEndDate").value;
+        const startTime = parseInt(
+          document.getElementById("bulkPriceStartTime").value
+        );
+        const endTime = parseInt(
+          document.getElementById("bulkPriceEndTime").value
+        );
+        const price = parseFloat(
+          document.getElementById("bulkSlotPrice").value
+        );
+
+        const selectedDays = Array.from(
+          document.querySelectorAll("#dayOfWeekSelector input:checked")
+        ).map((cb) => parseInt(cb.value));
+
+        // Validation
+        if (
+          !startDateStr ||
+          !endDateStr ||
+          isNaN(price) ||
+          selectedDays.length === 0
+        ) {
+          showToast("Please fill all fields for bulk pricing.", "error");
+          return;
+        }
+        const startDate = new Date(startDateStr.replace(/-/g, "\/"));
+        const endDate = new Date(endDateStr.replace(/-/g, "\/"));
+
+        if (endDate < startDate) {
+          showToast("End date cannot be before start date.", "error");
+          return;
+        }
+        if (endTime <= startTime) {
+          showToast("End time must be after start time.", "error");
+          return;
+        }
+
+        const confirmBtn = document.getElementById("setBulkPriceBtn");
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Applying...";
+
+        try {
+          let datesToUpdate = [];
+          let currentDate = new Date(startDate);
+          while (currentDate <= endDate) {
+            if (selectedDays.includes(currentDate.getDay())) {
+              datesToUpdate.push(new Date(currentDate));
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+
+          if (datesToUpdate.length === 0) {
+            showToast("No matching dates found in the selected range.", "info");
+            return;
+          }
+
+          // Firestore update logic
+          for (const date of datesToUpdate) {
+            const dateStr = toYYYYMMDD(date);
+            const priceDocRef = doc(
+              db,
+              `artifacts/${appId}/public/data/prices`,
+              dateStr
+            );
+            const priceUpdate = {};
+            for (let hour = startTime; hour < endTime; hour++) {
+              priceUpdate[String(hour)] = price;
+            }
+            await setDoc(priceDocRef, priceUpdate, { merge: true });
+          }
+
+          await logAdminActivity(
+            "Set Bulk Price",
+            `Set price to ${price} for selected days between ${startDateStr} and ${endDateStr}.`
+          );
+          showToast(
+            `Successfully updated prices for ${datesToUpdate.length} day(s).`
+          );
+        } catch (error) {
+          console.error("Error setting bulk price:", error);
+          showToast("An error occurred while setting prices.", "error");
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Apply Bulk Price";
+        }
+      }
+
+      function renderCoachSection() {
+        const section = document.getElementById("coachSection");
+        if (!section) return;
+        section.innerHTML = `
+                <h3 class="font-semibold text-lg" data-translate-key="manageCoaches">Manage Coaches</h3>
+                <div>
+                    <label for="coachName" class="block text-sm font-medium text-gray-700" data-translate-key="coachName">Coach Name</label>
+                    <input type="text" id="coachName" placeholder="e.g., Coach John" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-accent focus:ring-brand-accent">
+                </div>
+                <button id="addCoachBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors font-semibold" data-translate-key="addCoach">Add Coach</button>
+                <div id="coachList" class="mt-4 space-y-2"></div>`;
+        renderCoachList();
+      }
+
+      function renderAdminLogSection() {
+        const section = document.getElementById("adminLogSection");
+        if (!section) return;
+
+        const sortedLogs = [...adminLogs].sort(
+          (a, b) => b.timestamp - a.timestamp
+        );
+
+        let logHtml = `<div class="flex justify-between items-center"><h3 class="font-semibold text-lg" data-translate-key="adminActivityLog">Admin Activity Log</h3><button id="exportLogsBtn" class="text-sm bg-green-600 text-white py-1 px-3 rounded-md hover:bg-green-700" data-translate-key="exportCsv">Export CSV</button></div><div class="max-h-60 overflow-y-auto mt-2 border rounded-md p-2 space-y-2 text-xs">`;
+
+        if (sortedLogs.length === 0) {
+          logHtml += `<p class="text-gray-500" data-translate-key="noAdminLogs">No admin activities recorded yet.</p>`;
+        } else {
+          sortedLogs.forEach((log) => {
+            const date = log.timestamp
+              ? new Date(log.timestamp).toLocaleString(
+                  translations[currentLang].locale || "en-US"
+                )
+              : "N/A";
+            logHtml += `<div class="bg-gray-50 p-1.5 rounded"><p><strong>${log.adminUser}</strong>: ${log.action} - <span class="text-gray-600">${log.details}</span></p><p class="text-gray-400 text-right text-xs">${date}</p></div>`;
+          });
+        }
+        logHtml += `</div>`;
+        section.innerHTML = logHtml;
+      }
+
+      function renderAdminMgmtSection() {
+        const section = document.getElementById("adminMgmtSection");
+        if (!section) return;
+        section.innerHTML = `
+                <h3 class="font-semibold text-lg" data-translate-key="manageAdmins">Manage Admins</h3>
+                 <p class="text-xs text-gray-500" data-translate-key="adminMgmtNote">Note: This is a UI simulation. User data is not saved.</p>
+                <div>
+                     <input type="text" id="newAdminUser" data-translate-key="username" placeholder="Username" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                     <input type="text" id="newAdminPass" data-translate-key="password" placeholder="Password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                     <select id="newAdminLevel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="Full Access" data-translate-key="fullAccess">Full Access</option>
+                        <option value="Verifier" data-translate-key="verifier">Verifier</option>
+                     </select>
+                </div>
+                <button id="addAdminBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700" data-translate-key="addAdmin">Add Admin</button>
+                <div id="adminList" class="mt-4 space-y-2 text-sm"></div>`;
+        renderAdminList();
+      }
+
+      async function handleSetPrice() {
+        const date = document.getElementById("priceDate").value;
+        const time = document.getElementById("priceTime").value;
+        const price = parseFloat(document.getElementById("slotPrice").value);
+
+        if (!date || !time || isNaN(price)) {
+          showToast("Please fill all price fields correctly.", "error");
+          return;
+        }
+
+        try {
+          const pricesPath = `artifacts/${appId}/public/data/prices`;
+          const priceDocRef = doc(db, pricesPath, date);
+          await setDoc(priceDocRef, { [time]: price }, { merge: true });
+          await logAdminActivity(
+            "Set Price",
+            `Price for ${date} at ${time}:00 set to ${price} THB.`
+          );
+          showToast(`Price set successfully.`);
+          document.getElementById("slotPrice").value = "";
+        } catch (error) {
+          console.error("Error setting price: ", error);
+          showToast("Failed to set price.", "error");
+        }
+      }
+      async function handleAddCoach() {
+        const name = document.getElementById("coachName").value.trim();
+        if (!name) {
+          showToast("Please enter a coach name.", "error");
+          return;
+        }
+        try {
+          const coachesPath = `artifacts/${appId}/public/data/coaches`;
+          await addDoc(collection(db, coachesPath), { name });
+          await logAdminActivity("Add Coach", `Added new coach: ${name}.`);
+          showToast("Coach added successfully.");
+          document.getElementById("coachName").value = "";
+        } catch (error) {
+          console.error("Error adding coach:", error);
+          showToast("Failed to add coach.", "error");
+        }
+      }
+      async function handleDeleteCoach(id) {
+        if (!id) return;
+        const coachName = coaches.find((c) => c.id === id)?.name || "Unknown";
+        try {
+          const coachDocRef = doc(
+            db,
+            `artifacts/${appId}/public/data/coaches`,
+            id
+          );
+          await deleteDoc(coachDocRef);
+          await logAdminActivity(
+            "Delete Coach",
+            `Deleted coach: ${coachName} (ID: ${id}).`
+          );
+          showToast("Coach deleted.");
+        } catch (error) {
+          console.error("Error deleting coach: ", error);
+          showToast("Failed to delete coach.", "error");
+        }
+      }
+
+      // --- Helper Functions ---
+      function populateAdminTimeSelect() {
+        const select = document.getElementById("priceTime");
+        if (!select) return;
+        select.innerHTML = "";
+        for (
+          let hour = operatingHours.start;
+          hour < operatingHours.end;
+          hour++
+        ) {
+          const option = document.createElement("option");
+          option.value = hour;
+          option.textContent = `${hour}:00 - ${hour + 1}:00`;
+          select.appendChild(option);
+        }
+      }
+
+      function renderCoachList() {
+        const listEl = document.getElementById("coachList");
+        if (!listEl) return;
+        listEl.innerHTML = "";
+        coaches.forEach((coach) => {
+          const coachEl = document.createElement("div");
+          coachEl.className =
+            "flex justify-between items-center bg-gray-100 p-2 rounded";
+          coachEl.innerHTML = `<span>${coach.name}</span> <button data-id="${coach.id}" class="text-red-500 hover:text-red-700 text-xs font-semibold" data-translate-key="delete">DELETE</button>`;
+          listEl.appendChild(coachEl);
+        });
+        setLanguage(currentLang);
+      }
+
+      function renderAdminList() {
+        const listEl = document.getElementById("adminList");
+        if (!listEl) return;
+        listEl.innerHTML = "";
+        admins.forEach((admin) => {
+          const adminEl = document.createElement("div");
+          adminEl.className =
+            "flex justify-between items-center bg-gray-100 p-2 rounded";
+          adminEl.innerHTML = `<span>${admin.user} (${admin.level})</span>`;
+          listEl.appendChild(adminEl);
+        });
+      }
+
+      function populateCoachSelect() {
+        const select = document.getElementById("coachSelect");
+        if (!select) return;
+        select.innerHTML = `<option value="" data-translate-key="selectCoachPrompt">Select a coach...</option>`;
+        coaches.forEach((coach) => {
+          const option = document.createElement("option");
+          option.value = coach.id;
+          option.textContent = coach.name;
+          select.appendChild(option);
+        });
+      }
+
+      async function updateReservationStatus(id, status, name) {
+        const resDocRef = doc(
+          db,
+          `artifacts/${appId}/public/data/reservations`,
+          id
+        );
+        try {
+          await updateDoc(resDocRef, { status: status });
+          await logAdminActivity(
+            `Reservation ${status}`,
+            `Reservation for ${name} (ID: ${id}) was ${status}.`
+          );
+          showToast(`Reservation ${status}.`);
+        } catch (error) {
+          console.error(`Error updating reservation ${id}:`, error);
+          showToast("Failed to update status.", "error");
+        }
+      }
+
+      function exportLogsToCSV() {
+        if (adminLogs.length === 0) {
+          showToast("No logs to export.", "info");
+          return;
+        }
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Timestamp,Admin,Action,Details\r\n"; // Header
+
+        const sortedLogs = [...adminLogs].sort(
+          (a, b) => a.timestamp - b.timestamp
+        );
+
+        sortedLogs.forEach((log) => {
+          const timestamp = log.timestamp
+            ? new Date(log.timestamp).toISOString()
+            : "N/A";
+          const row = `"${timestamp}","${log.adminUser}","${
+            log.action
+          }","${log.details.replace(/"/g, '""')}"`;
+          csvContent += row + "\r\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute(
+          "download",
+          `admin_logs_${new Date().toISOString().split("T")[0]}.csv`
+        );
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // --- Event Listeners ---
+      prevMonthBtn.addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar(currentDate);
+      });
+      nextMonthBtn.addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar(currentDate);
+      });
+      closeSlotsModalBtn.addEventListener("click", closeTimeSlotsModal);
+      timeSlotsModal.addEventListener("click", (e) => {
+        if (e.target === timeSlotsModal) closeTimeSlotsModal();
+      });
+
+      document
+        .getElementById("myReservationsBtn")
+        .addEventListener("click", showMyReservations);
+      document
+        .getElementById("closeMyReservationsModal")
+        .addEventListener("click", closeMyReservationsModal);
+      myReservationsModal.addEventListener("click", (e) => {
+        if (e.target === myReservationsModal) closeMyReservationsModal();
+      });
+
+      document
+        .getElementById("closePayslipModal")
+        .addEventListener("click", () => payslipModal.classList.add("hidden"));
+
+      timeSlotsList.addEventListener("click", (e) => {
+        if (e.target.tagName === "BUTTON") {
+          const { date, time, price } = e.target.dataset;
+          openBookingModal(date, time, price);
+        }
+      });
+
+      // Booking & Payment Listeners
+      document
+        .getElementById("cancelBookingBtn")
+        .addEventListener("click", () => bookingModal.classList.add("hidden"));
+      document
+        .getElementById("proceedToPaymentBtn")
+        .addEventListener("click", () => {
+          // Basic validation
+          const name = document.getElementById("customerName").value.trim();
+          const mobile = document.getElementById("customerMobile").value.trim();
+          const email = document.getElementById("customerEmail").value.trim();
+
+          let coachId = null;
+          if (appearanceSettings.coachSelectionEnabled && coaches.length > 0) {
+            coachId = document.getElementById("coachSelect").value;
+            if (!coachId) {
+              showToast(
+                translations[currentLang].selectCoachPrompt.replace("...", ""),
+                "error"
+              );
+              return;
+            }
+          }
+
+          if (!name || !mobile || !email) {
+            showToast("Please fill in your name, mobile, and email.", "error");
+            return;
+          }
+          if (!/^\S+@\S+\.\S+$/.test(email)) {
+            showToast("Please enter a valid email address.", "error");
+            return;
+          }
+
+          currentBooking.name = name;
+          currentBooking.mobile = mobile;
+          currentBooking.email = email;
+          currentBooking.coachId = coachId; // will be null if disabled or no coaches
+          createTemporaryHold();
+        });
+      document
+        .getElementById("cancelPaymentBtn")
+        .addEventListener("click", async () => {
+          paymentModal.classList.add("hidden");
+          bookingModal.classList.remove("hidden");
+          if (currentBooking.id) {
+            await deleteTemporaryHold(currentBooking.id);
+          }
+          if (countdownInterval) clearInterval(countdownInterval);
+        });
+      document
+        .getElementById("payslipUpload")
+        .addEventListener("change", (e) => {
+          if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            document.getElementById("fileName").textContent = file.name;
+            currentBooking.payslipFile = file;
+            document.getElementById("confirmReservationBtn").disabled = false;
+          }
+        });
+      document
+        .getElementById("confirmReservationBtn")
+        .addEventListener("click", handleConfirmReservation);
+
+      // Admin Event delegation for dynamic content
+      adminView.addEventListener("click", (e) => {
+        if (e.target.matches(".admin-nav-btn")) {
+          showAdminSubView(e.target.dataset.view);
+        }
+        if (e.target.id === "saveSettingsBtn") handleSaveSettings();
+        if (e.target.id === "setPriceBtn") handleSetPrice();
+        if (e.target.id === "addCoachBtn") handleAddCoach();
+        if (e.target.matches("#coachList button"))
+          handleDeleteCoach(e.target.dataset.id);
+        if (e.target.matches(".approve-btn"))
+          updateReservationStatus(
+            e.target.dataset.id,
+            "confirmed",
+            e.target.dataset.name
+          );
+        if (e.target.matches(".reject-btn"))
+          updateReservationStatus(
+            e.target.dataset.id,
+            "rejected",
+            e.target.dataset.name
+          );
+        if (e.target.matches(".view-slip-btn"))
+          showPayslipModal(e.target.dataset.slipUrl);
+        if (e.target.id === "exportLogsBtn") exportLogsToCSV();
+        if (e.target.id === "setBulkPriceBtn") handleSetBulkPrice();
+        if (e.target.matches("#dayOfWeekSelector + div button")) {
+          e.preventDefault();
+          const checkboxes = document.querySelectorAll(
+            '#dayOfWeekSelector input[type="checkbox"]'
+          );
+          let checkLogic;
+          if (e.target.id === "selectWeekdaysBtn")
+            checkLogic = (day) => day >= 1 && day <= 5;
+          else if (e.target.id === "selectWeekendsBtn")
+            checkLogic = (day) => day === 0 || day === 6;
+          else checkLogic = () => true;
+          checkboxes.forEach((cb) => {
+            cb.checked = checkLogic(parseInt(cb.value));
+          });
+        }
+        if (e.target.id === "addAdminBtn") {
+          showToast("Admin added (simulation).", "info");
+          // In a real app, you'd securely save this. Here we just update the UI.
+          const user = document.getElementById("newAdminUser").value;
+          const pass = document.getElementById("newAdminPass").value;
+          const level = document.getElementById("newAdminLevel").value;
+          if (user && pass) {
+            admins.push({ user, pass, level });
+            renderAdminList();
+          } else {
+            showToast("Username and password required.", "error");
+          }
+        }
+        if (
+          e.target.matches(".report-mode-btn") ||
+          e.target.id === "reportDate"
+        ) {
+          if (e.target.matches(".report-mode-btn")) {
+            document
+              .querySelectorAll(".report-mode-btn")
+              .forEach((btn) => btn.classList.remove("active"));
+            e.target.classList.add("active");
+          }
+          updateReport();
+        }
+        if (e.target.matches("#coachReportMonth")) {
+          generateCoachReport(e.target.value);
+        }
+      });
+
+      toggleAdminViewBtn.addEventListener("click", () => {
+        if (loggedInAdmin) {
+          handleAdminLogout();
+        } else {
+          adminLoginModal.classList.remove("hidden");
+          adminLoginModal.classList.add("flex");
+        }
+      });
+      document
+        .getElementById("loginBtn")
+        .addEventListener("click", handleAdminLogin);
+      document
+        .getElementById("cancelLoginBtn")
+        .addEventListener("click", () =>
+          adminLoginModal.classList.add("hidden")
+        );
+
+      // LINE Login Event Listeners
+      document
+        .getElementById("lineLoginBtn")
+        .addEventListener("click", initiateLINELogin);
+      
+      document
+        .getElementById("lineLogoutBtn")
+        .addEventListener("click", handleLineLogout);
+
+      // --- Translation Logic ---
+      let currentLang = "en";
+      const translations = {
+        en: {
+          locale: "en-US",
+          tagline: "Book your session below",
+          sun: "Sun",
+          mon: "Mon",
+          tue: "Tue",
+          wed: "Wed",
+          thu: "Thu",
+          fri: "Fri",
+          sat: "Sat",
+          available: "Available",
+          limited: "Limited",
+          full: "Full",
+          viewMyReservations: "View My Reservations",
+          addressLabel: "Address:",
+          telLabel: "Tel:",
+          viewOnGoogleMaps: "View on Google Maps",
+          fullyBooked: "Fully Booked",
+          slotsAvailable: "slot(s) available",
+          book: "Book",
+          confirmYourBooking: "Confirm Your Booking",
+          dateLabel: "Date:",
+          timeLabel: "Time:",
+          priceLabel: "Price:",
+          fullNameLabel: "Full Name",
+          mobileNumberLabel: "Mobile Number",
+          emailLabel: "Email",
+          selectCoachLabel: "Select a Coach",
+          cancel: "Cancel",
+          proceedToPayment: "Proceed",
+          paymentDetails: "Payment Details",
+          paymentInstruction: "Please transfer",
+          paymentInstruction2: "and upload the payslip to confirm.",
+          attachPayslip: "Attach Payslip",
+          back: "Back",
+          confirmReservation: "Confirm Reservation",
+          myReservationsTitle: "My Reservations",
+          noUpcomingReservations: "You have no upcoming reservations.",
+          adminPanel: "Admin Panel",
+          logout: "Logout",
+          adminLogin: "Admin Login",
+          username: "Username",
+          password: "Password",
+          login: "Login",
+          adminPanelTitle: "Admin Panel",
+          todaysCheckin: "Today's Check-in",
+          allReservations: "All Reservations",
+          reports: "Reports",
+          coachReports: "Coach Report",
+          settings: "Settings",
+          todaysConfirmedReservations: "Today's Confirmed Reservations",
+          noConfirmedReservationsToday: "No confirmed reservations for today.",
+          nameLabel: "Name:",
+          contactLabel: "Contact:",
+          coachLabel: "Coach:",
+          browseAllReservations: "Browse All Reservations",
+          selectDate: "Select Date:",
+          noReservationsForDate: "No reservations for this date.",
+          occupancyReport: "Occupancy Report",
+          reportDay: "Day",
+          reportWeek: "Week",
+          reportMonth: "Month",
+          reportFor: "Report for",
+          reportOf: "of",
+          reportSlotsSold: "slots sold",
+          reportWeekOf: "Week of",
+          slotsSold: "Slots Sold",
+          slotsUnsold: "Slots Unsold",
+          slotOccupancy: "Slot Occupancy",
+          generalAppearanceSettings: "General & Appearance Settings",
+          academyName: "Academy Name",
+          logoUrl: "Logo URL",
+          bgColor: "BG Color",
+          bgImageUrl: "BG Image URL",
+          enableCoachSelection: "Enable Coach Selection",
+          enableCoachSelectionDisabled:
+            "Enable Coach Selection (add a coach first)",
+          paymentSettings: "Payment Settings",
+          qrCodeUrl: "QR Code Image URL",
+          bankName: "Bank Name",
+          accountNo: "Account No.",
+          businessInfo: "Business Information",
+          address: "Address",
+          googleMapsLink: "Google Maps Link",
+          phoneNumber: "Phone Number",
+          advancedSettings: "Advanced Settings",
+          storagePath: "Storage Upload Path",
+          storagePathHelp:
+            "The cloud storage path for payslip uploads. Change only if uploads fail.",
+          saveAllSettings: "Save All Settings",
+          setBulkPrice: "Set Bulk Price by Range",
+          startDate: "Start Date",
+          endDate: "End Date",
+          daysOfWeek: "Days of the Week",
+          weekdays: "Weekdays",
+          weekends: "Weekends",
+          all: "All",
+          startTime: "Start Time",
+          endTime: "End Time",
+          priceTHB: "Price (THB)",
+          applyBulkPrice: "Apply Bulk Price",
+          setSpecificPrice: "Set Specific Slot Price (Override)",
+          date: "Date",
+          timeSlot: "Time Slot",
+          setPrice: "Set Price",
+          manageCoaches: "Manage Coaches",
+          coachName: "Coach Name",
+          addCoach: "Add Coach",
+          delete: "DELETE",
+          adminActivityLog: "Admin Activity Log",
+          exportCsv: "Export CSV",
+          noAdminLogs: "No admin activities recorded yet.",
+          manageAdmins: "Manage Admins",
+          adminMgmtNote:
+            "Note: This is a UI simulation. User data is not saved.",
+          fullAccess: "Full Access",
+          verifier: "Verifier",
+          addAdmin: "Add Admin",
+          selectCoachPrompt: "Select a coach...",
+          pendingReservations: "Pending Reservations",
+          noPendingReservations: "No pending reservations.",
+          paymentVerification: "Payment Verification",
+          viewPayslip: "View Payslip",
+          approve: "Approve",
+          reject: "Reject",
+          noPayslip: "No payslip was uploaded for this reservation.",
+          coachReportTitle: "Coach Hours Report",
+          selectMonth: "Select Month:",
+          noCoachData: "No coach data for this period.",
+          totalHours: "Total Hours",
+          paymentTimerLabel: "Time remaining:",
+        },
+        th: {
+          locale: "th-TH",
+          tagline: "จองเซสชั่นของคุณด้านล่าง",
+          sun: "อา",
+          mon: "จ",
+          tue: "อ",
+          wed: "พ",
+          thu: "พฤ",
+          fri: "ศ",
+          sat: "ส",
+          available: "ว่าง",
+          limited: "จำกัด",
+          full: "เต็ม",
+          viewMyReservations: "ดูการจองของฉัน",
+          addressLabel: "ที่อยู่:",
+          telLabel: "โทร:",
+          viewOnGoogleMaps: "ดูบน Google Maps",
+          fullyBooked: "เต็มแล้ว",
+          slotsAvailable: "ช่องว่าง",
+          book: "จอง",
+          confirmYourBooking: "ยืนยันการจองของคุณ",
+          dateLabel: "วันที่:",
+          timeLabel: "เวลา:",
+          priceLabel: "ราคา:",
+          fullNameLabel: "ชื่อ-นามสกุล",
+          mobileNumberLabel: "เบอร์มือถือ",
+          emailLabel: "อีเมล",
+          selectCoachLabel: "เลือกโค้ช",
+          cancel: "ยกเลิก",
+          proceedToPayment: "ดำเนินการต่อ",
+          paymentDetails: "รายละเอียดการชำระเงิน",
+          paymentInstruction: "กรุณาโอนเงิน",
+          paymentInstruction2: "และอัปโหลดสลิปเพื่อยืนยัน",
+          attachPayslip: "แนบสลิป",
+          back: "กลับ",
+          confirmReservation: "ยืนยันการจอง",
+          myReservationsTitle: "การจองของฉัน",
+          noUpcomingReservations: "คุณไม่มีการจองที่จะมาถึง",
+          adminPanel: "แผงผู้ดูแล",
+          logout: "ออกจากระบบ",
+          adminLogin: "เข้าสู่ระบบผู้ดูแล",
+          username: "ชื่อผู้ใช้",
+          password: "รหัสผ่าน",
+          login: "เข้าสู่ระบบ",
+          adminPanelTitle: "แผงผู้ดูแล",
+          todaysCheckin: "เช็คอินวันนี้",
+          allReservations: "การจองทั้งหมด",
+          reports: "รายงาน",
+          coachReports: "รายงานโค้ช",
+          settings: "ตั้งค่า",
+          todaysConfirmedReservations: "การจองที่ยืนยันแล้วสำหรับวันนี้",
+          noConfirmedReservationsToday: "ไม่มีการจองที่ยืนยันแล้วสำหรับวันนี้",
+          nameLabel: "ชื่อ:",
+          contactLabel: "ติดต่อ:",
+          coachLabel: "โค้ช:",
+          browseAllReservations: "ดูการจองทั้งหมด",
+          selectDate: "เลือกวันที่:",
+          noReservationsForDate: "ไม่มีการจองสำหรับวันที่นี้",
+          occupancyReport: "รายงานการเข้าใช้",
+          reportDay: "วัน",
+          reportWeek: "สัปดาห์",
+          reportMonth: "เดือน",
+          reportFor: "รายงานสำหรับ",
+          reportOf: "จาก",
+          reportSlotsSold: "ช่องที่ขายได้",
+          reportWeekOf: "สัปดาห์ของ",
+          slotsSold: "ช่องที่ขายได้",
+          slotsUnsold: "ช่องที่ยังไม่ได้ขาย",
+          slotOccupancy: "การเข้าใช้ช่อง",
+          generalAppearanceSettings: "การตั้งค่าทั่วไปและลักษณะที่ปรากฏ",
+          academyName: "ชื่อสถาบัน",
+          logoUrl: "URL โลโก้",
+          bgColor: "สีพื้นหลัง",
+          bgImageUrl: "URL รูปภาพพื้นหลัง",
+          enableCoachSelection: "เปิดใช้งานการเลือกโค้ช",
+          enableCoachSelectionDisabled: "เปิดใช้งาน (เพิ่มโค้ชก่อน)",
+          paymentSettings: "ตั้งค่าการชำระเงิน",
+          qrCodeUrl: "URL รูปภาพ QR Code",
+          bankName: "ชื่อธนาคาร",
+          accountNo: "เลขที่บัญชี",
+          businessInfo: "ข้อมูลธุรกิจ",
+          address: "ที่อยู่",
+          googleMapsLink: "ลิงก์ Google Maps",
+          phoneNumber: "เบอร์โทรศัพท์",
+          advancedSettings: "ตั้งค่าขั้นสูง",
+          storagePath: "เส้นทางอัปโหลดไฟล์",
+          storagePathHelp:
+            "เส้นทางสำหรับอัปโหลดสลิป เปลี่ยนเมื่อการอัปโหลดล้มเหลวเท่านั้น",
+          saveAllSettings: "บันทึกการตั้งค่าทั้งหมด",
+          setBulkPrice: "ตั้งราคาแบบกลุ่ม",
+          startDate: "วันที่เริ่มต้น",
+          endDate: "วันที่สิ้นสุด",
+          daysOfWeek: "วันในสัปดาห์",
+          weekdays: "วันธรรมดา",
+          weekends: "สุดสัปดาห์",
+          all: "ทั้งหมด",
+          startTime: "เวลาเริ่มต้น",
+          endTime: "เวลาสิ้นสุด",
+          priceTHB: "ราคา (บาท)",
+          applyBulkPrice: "ใช้ราคาแบบกลุ่ม",
+          setSpecificPrice: "ตั้งราคาเฉพาะช่อง (เขียนทับ)",
+          date: "วันที่",
+          timeSlot: "ช่วงเวลา",
+          setPrice: "ตั้งราคา",
+          manageCoaches: "จัดการโค้ช",
+          coachName: "ชื่อโค้ช",
+          addCoach: "เพิ่มโค้ช",
+          delete: "ลบ",
+          adminActivityLog: "บันทึกกิจกรรมผู้ดูแล",
+          exportCsv: "ส่งออก CSV",
+          noAdminLogs: "ยังไม่มีบันทึกกิจกรรม",
+          manageAdmins: "จัดการผู้ดูแล",
+          adminMgmtNote:
+            "หมายเหตุ: นี่คือการจำลอง UI ข้อมูลผู้ใช้จะไม่ถูกบันทึก",
+          fullAccess: "สิทธิ์ทั้งหมด",
+          verifier: "ผู้ตรวจสอบ",
+          addAdmin: "เพิ่มผู้ดูแล",
+          selectCoachPrompt: "เลือกโค้ช...",
+          pendingReservations: "การจองที่รอดำเนินการ",
+          noPendingReservations: "ไม่มีการจองที่รอดำเนินการ",
+          paymentVerification: "ตรวจสอบการชำระเงิน",
+          viewPayslip: "ดูสลิป",
+          approve: "อนุมัติ",
+          reject: "ปฏิเสธ",
+          noPayslip: "ไม่มีสลิปสำหรับการจองนี้",
+          coachReportTitle: "รายงานชั่วโมงโค้ช",
+          selectMonth: "เลือกเดือน:",
+          noCoachData: "ไม่มีข้อมูลโค้ชสำหรับช่วงเวลานี้",
+          totalHours: "ชั่วโมงทั้งหมด",
+          paymentTimerLabel: "เวลาที่เหลือ:",
+        },
+      };
+
+      function setLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll("[data-translate-key]").forEach((el) => {
+          const key = el.dataset.translateKey;
+          if (translations[lang][key]) {
+            if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+              if (el.type !== "checkbox" && el.type !== "radio")
+                el.placeholder = translations[lang][key];
+            } else {
+              el.textContent = translations[lang][key];
+            }
+          }
+        });
+
+        // Handle special cases
+        renderCalendar(currentDate);
+        const activeAdminView = document.querySelector(".admin-nav-btn.active")
+          ?.dataset.view;
+        if (loggedInAdmin && activeAdminView === "reports") {
+          updateReport();
+        }
+
+        // Update lang switcher buttons
+        document.querySelectorAll(".lang-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.lang === lang);
+        });
+      }
+
+      // Add listener for language switcher
+      document.getElementById("langSwitcher").addEventListener("click", (e) => {
+        if (e.target.matches(".lang-btn")) {
+          setLanguage(e.target.dataset.lang);
+        }
+      });
+
+      // --- Initial Load ---
+      initializeFirebase();
+      setLanguage("en"); // Set default language on load
+    </script>
+  </body>
+</html>
