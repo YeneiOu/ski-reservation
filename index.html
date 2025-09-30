@@ -775,7 +775,7 @@
         if (code && state && state === storedState) {
           try {
             // Exchange code for access token with the backend
-            const resp = await fetch(
+            const response = await fetch(
               `https://bun-line-ao-production.up.railway.app/callback?code=${code}&state=${state}`
             );
             const data = await response.json();
@@ -845,16 +845,11 @@
       }
       async function handleGetProfile() {
         const token = localStorage.getItem("lineUserToken");
-        const profile = localStorage.getItem("lineUserProfile");
-        if (token && profile) {
-          lineUserToken = token.access_token;
-          lineUserProfile = {
-            userId: profile.sub,
-            displayName: profile.name,
-            pictureUrl: profile.picture,
-            email: profile.email,
-            statusMessage: "",
-          };
+        const profileString = localStorage.getItem("lineUserProfile");
+        if (token && profileString) {
+          lineUserToken = token;
+          lineUserProfile = JSON.parse(profileString);
+          console.log("Retrieved profile from localStorage:", lineUserProfile);
         }
       }
 
