@@ -748,7 +748,7 @@
         const lineLoginRedirectUri =
           "https://bun-line-ao-production.up.railway.app";
         const redirectUrl = `${lineLoginRedirectUri}/callback`;
-        const scope = "profile%20openid%20email";
+        const scope = "openid profile email";
         const state = Math.random().toString(36).substring(2, 15);
 
         // Store state for verification
