@@ -271,25 +271,37 @@
     >
       <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
         <div class="text-center mb-6">
-          <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          <div
+            class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <svg
+              class="w-8 h-8 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+              />
             </svg>
           </div>
           <h3 class="text-2xl font-bold text-gray-800 mb-2">Welcome!</h3>
-          <p class="text-gray-600 text-sm">Please login with LINE to continue</p>
+          <p class="text-gray-600 text-sm">
+            Please login with LINE to continue
+          </p>
         </div>
-        
+
         <button
           id="lineLoginBtn"
           class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
         >
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12.017 2.011c-5.506 0-9.967 4.461-9.967 9.967 0 1.739.447 3.374 1.232 4.798L2.011 21.99l5.214-1.272c1.424.785 3.059 1.232 4.798 1.232 5.506 0 9.967-4.461 9.967-9.967S17.523 2.011 12.017 2.011zm4.47 7.075c.146.146.146.382 0 .528l-2.646 2.646c-.146.146-.382.146-.528 0l-1.323-1.323-1.323 1.323c-.146.146-.382.146-.528 0L7.493 9.614c-.146-.146-.146-.382 0-.528s.382-.146.528 0l2.117 2.117 1.323-1.323c.146-.146.382-.146.528 0l1.323 1.323 2.117-2.117c.146-.146.382-.146.528 0z"/>
+            <path
+              d="M12.017 2.011c-5.506 0-9.967 4.461-9.967 9.967 0 1.739.447 3.374 1.232 4.798L2.011 21.99l5.214-1.272c1.424.785 3.059 1.232 4.798 1.232 5.506 0 9.967-4.461 9.967-9.967S17.523 2.011 12.017 2.011zm4.47 7.075c.146.146.146.382 0 .528l-2.646 2.646c-.146.146-.382.146-.528 0l-1.323-1.323-1.323 1.323c-.146.146-.382.146-.528 0L7.493 9.614c-.146-.146-.146-.382 0-.528s.382-.146.528 0l2.117 2.117 1.323-1.323c.146-.146.382-.146.528 0l1.323 1.323 2.117-2.117c.146-.146.382-.146.528 0z"
+            />
           </svg>
           <span>Login with LINE</span>
         </button>
-        
+
         <p class="text-xs text-gray-500 text-center mt-4">
           By continuing, you agree to our terms of service
         </p>
@@ -662,8 +674,11 @@
 
       // --- LINE Login Configuration ---
       const lineLoginChannelId = "2008191948";
-      const lineLoginRedirectUri = "https://bun-line-ao-production.up.railway.app";
-      const runtimeHost = window.location.href.includes('.html') ? window.location.href : window.location.origin;
+      const lineLoginRedirectUri =
+        "https://bun-line-ao-production.up.railway.app";
+      const runtimeHost = window.location.href.includes(".html")
+        ? window.location.href
+        : window.location.origin;
       console.log("Runtime host:", runtimeHost);
       let lineUserToken = null;
       let lineUserProfile = null;
@@ -681,6 +696,22 @@
       let loggedInAdmin = null; // Store admin session info
       let selectedDate = null; // Store currently selected date string
 
+      window.addEventListener("DOMContentLoaded", () => {
+        const params = new URLSearchParams(window.location.search);
+        const profile = params.get("profile");
+        const token = params.get("token");
+
+        if (profile && token) {
+          localStorage.setItem("lineUserProfile", profile);
+          localStorage.setItem("lineUserToken", token);
+
+          console.log("LINE login complete", profile, token);
+
+          // ลบ query params ออก
+          window.history.replaceState({}, document.title, "/index.html");
+        }
+      });
+
       // --- Admin Simulation Data ---
       const admins = [
         { user: "admin", pass: "admin", level: "Full Access" },
@@ -690,9 +721,9 @@
       // --- LINE Login Functions ---
       function checkLineToken() {
         // Check if we have a LINE token in localStorage
-        const token = localStorage.getItem('lineUserToken');
-        const profile = localStorage.getItem('lineUserProfile');
-        
+        const token = localStorage.getItem("lineUserToken");
+        const profile = localStorage.getItem("lineUserProfile");
+
         if (token && profile) {
           lineUserToken = token;
           lineUserProfile = JSON.parse(profile);
@@ -702,95 +733,107 @@
       }
 
       function showLineLoginModal() {
-        const lineLoginModal = document.getElementById('lineLoginModal');
-        lineLoginModal.classList.remove('hidden');
-        lineLoginModal.classList.add('flex');
+        const lineLoginModal = document.getElementById("lineLoginModal");
+        lineLoginModal.classList.remove("hidden");
+        lineLoginModal.classList.add("flex");
       }
 
       function hideLineLoginModal() {
-        const lineLoginModal = document.getElementById('lineLoginModal');
-        lineLoginModal.classList.add('hidden');
-        lineLoginModal.classList.remove('flex');
+        const lineLoginModal = document.getElementById("lineLoginModal");
+        lineLoginModal.classList.add("hidden");
+        lineLoginModal.classList.remove("flex");
       }
 
       function initiateLINELogin() {
+        // Use the backend redirect URI, not the local runtime host
         const redirectUrl = `${lineLoginRedirectUri}/callback`;
         const scope = "profile%20openid%20email";
         const state = Math.random().toString(36).substring(2, 15);
-        
+
         // Store state for verification
-        localStorage.setItem('lineLoginState', state);
-        
+        localStorage.setItem("lineLoginState", state);
+
         const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${lineLoginChannelId}&redirect_uri=${redirectUrl}&scope=${scope}&state=${state}`;
-        
+
         // Redirect to LINE login
         window.location.href = lineLoginUrl;
       }
 
       async function handleCallbackUrl() {
         const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const state = urlParams.get('state');
-        const storedState = localStorage.getItem('lineLoginState');
-        
+        const code = urlParams.get("code");
+        console.log("Code:", code);
+        const state = urlParams.get("state");
+        console.log("State:", state);
+        const storedState = localStorage.getItem("lineLoginState");
+        console.log("Stored state:", storedState);
+
         if (code && state && state === storedState) {
           try {
             // Exchange code for access token with the backend
-            const response = await fetch(`${lineLoginRedirectUri}/callback?code=${code}&state=${state}`);
+            const response = await fetch(
+              `${lineLoginRedirectUri}/callback?code=${code}&state=${state}`
+            );
             const data = await response.json();
             console.log("Callback data:", data);
-            
+
             // Check if login was successful
             if (data.code === 200 && data.data) {
               const { token, profile } = data.data;
               console.log("Token:", token);
               console.log("Profile:", profile);
-              
+
               // Store the real LINE token and profile
-              localStorage.setItem('lineUserToken', token.access_token);
-              localStorage.setItem('lineUserProfile', JSON.stringify({
-                userId: profile.sub,
-                displayName: profile.name,
-                pictureUrl: profile.picture,
-                email: profile.email,
-                statusMessage: ''
-              }));
-              
+              localStorage.setItem("lineUserToken", token.access_token);
+              localStorage.setItem(
+                "lineUserProfile",
+                JSON.stringify({
+                  userId: profile.sub,
+                  displayName: profile.name,
+                  pictureUrl: profile.picture,
+                  email: profile.email,
+                  statusMessage: "",
+                })
+              );
+
               lineUserToken = token.access_token;
               lineUserProfile = {
                 userId: profile.sub,
                 displayName: profile.name,
                 pictureUrl: profile.picture,
                 email: profile.email,
-                statusMessage: ''
+                statusMessage: "",
               };
-              
+
               // Clean up
-              localStorage.removeItem('lineLoginState');
-              
+              localStorage.removeItem("lineLoginState");
+
               // Redirect to runtime host origin
               window.location.href = runtimeHost;
-              
+
               return true;
             } else {
-              console.error('LINE login failed:', data.message || 'Unknown error');
-              showToast('Login failed. Please try again.', 'error');
+              console.error(
+                "LINE login failed:",
+                data.message || "Unknown error"
+              );
+              showToast("Login failed. Please try again.", "error");
               return false;
             }
           } catch (error) {
-            console.error('Error during LINE login callback:', error);
-            showToast('Login failed. Please try again.', 'error');
+            console.error("Error during LINE login callback:", error);
+            showToast("Login failed. Please try again.", "error");
             return false;
           }
         }
-        
+
         return false;
       }
 
       function handleSuccessPage() {
         // Show success message and redirect back to main app
-        showToast('Successfully logged in with LINE!', 'success');
-        
+        showToast("Successfully logged in with LINE!", "success");
+
         setTimeout(() => {
           // Remove the success parameter and redirect to main app
           window.location.href = runtimeHost;
@@ -799,33 +842,33 @@
 
       function handleLineLogout() {
         // Clear LINE login data
-        localStorage.removeItem('lineUserToken');
-        localStorage.removeItem('lineUserProfile');
-        localStorage.removeItem('lineLoginState');
-        
+        localStorage.removeItem("lineUserToken");
+        localStorage.removeItem("lineUserProfile");
+        localStorage.removeItem("lineLoginState");
+
         lineUserToken = null;
         lineUserProfile = null;
-        
+
         // Hide user info and show login modal
         hideLineUserInfo();
         showLineLoginModal();
-        
-        showToast('Successfully logged out', 'success');
+
+        showToast("Successfully logged out", "success");
       }
 
       function showLineUserInfo() {
         if (lineUserProfile) {
-          const userInfoEl = document.getElementById('lineUserInfo');
-          const userNameEl = document.getElementById('lineUserName');
-          
-          userNameEl.textContent = lineUserProfile.displayName || 'LINE User';
-          userInfoEl.classList.remove('hidden');
+          const userInfoEl = document.getElementById("lineUserInfo");
+          const userNameEl = document.getElementById("lineUserName");
+
+          userNameEl.textContent = lineUserProfile.displayName || "LINE User";
+          userInfoEl.classList.remove("hidden");
         }
       }
 
       function hideLineUserInfo() {
-        const userInfoEl = document.getElementById('lineUserInfo');
-        userInfoEl.classList.add('hidden');
+        const userInfoEl = document.getElementById("lineUserInfo");
+        userInfoEl.classList.add("hidden");
       }
 
       async function initializeFirebase() {
@@ -842,15 +885,15 @@
             console.log("Current path:", currentPath);
             const urlParams = new URLSearchParams(window.location.search);
             console.log("URL params:", urlParams);
-            
+
             // Check if this is a callback URL (either /callback path or has code parameter)
-            if (currentPath === '/callback' || urlParams.has('code')) {
+            if (currentPath === "/callback" || urlParams.has("code")) {
               console.log("Detected callback URL, processing...");
               const result = await handleCallbackUrl();
               if (result) {
                 return; // Will redirect to main app
               }
-            } else if (currentPath === '/success') {
+            } else if (currentPath === "/success") {
               handleSuccessPage();
               return;
             } else {
@@ -2773,7 +2816,7 @@
       document
         .getElementById("lineLoginBtn")
         .addEventListener("click", initiateLINELogin);
-      
+
       document
         .getElementById("lineLogoutBtn")
         .addEventListener("click", handleLineLogout);
