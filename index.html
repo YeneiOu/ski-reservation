@@ -673,9 +673,7 @@
       const appId = firebaseConfig.projectId;
 
       // --- LINE Login Configuration ---
-      const lineLoginChannelId = "2008191948";
-      const lineLoginRedirectUri =
-        "https://bun-line-ao-production.up.railway.app";
+
       const runtimeHost = window.location.href.includes(".html")
         ? window.location.href
         : window.location.origin;
@@ -746,6 +744,9 @@
 
       function initiateLINELogin() {
         // Use the backend redirect URI, not the local runtime host
+        const lineLoginChannelId = "2008191948";
+        const lineLoginRedirectUri =
+          "https://bun-line-ao-production.up.railway.app";
         const redirectUrl = `${lineLoginRedirectUri}/callback`;
         const scope = "profile%20openid%20email";
         const state = Math.random().toString(36).substring(2, 15);
@@ -753,7 +754,9 @@
         // Store state for verification
         localStorage.setItem("lineLoginState", state);
 
-        const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${lineLoginChannelId}&redirect_uri=${redirectUrl}&scope=${scope}&state=${state}`;
+        const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${lineLoginChannelId}&redirect_uri=${encodeURIComponent(
+          redirectUrl
+        )}&scope=${encodeURIComponent(scope)}&state=${state}`;
 
         // Redirect to LINE login
         window.location.href = lineLoginUrl;
@@ -771,8 +774,8 @@
         if (code && state && state === storedState) {
           try {
             // Exchange code for access token with the backend
-            const response = await fetch(
-              `${lineLoginRedirectUri}/callback?code=${code}&state=${state}`
+            const resp = await fetch(
+              `https://bun-line-ao-production.up.railway.app/callback?code=${code}&state=${state}`
             );
             const data = await response.json();
             console.log("Callback data:", data);
@@ -809,7 +812,8 @@
               localStorage.removeItem("lineLoginState");
 
               // Redirect to runtime host origin
-              window.location.href = runtimeHost;
+              window.location.href =
+                "https://ski-reservation-fxh4j19r1-yeneious-projects.vercel.app/";
 
               return true;
             } else {
