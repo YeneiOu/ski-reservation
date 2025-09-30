@@ -660,6 +660,7 @@
         getDownloadURL,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
+      console.log("ski-reservation v0.0.0.1:");
       // --- Firebase Setup ---
       const firebaseConfig = {
         apiKey: "AIzaSyAdR_Nx-xkvjRa-cRpnP35vzf0ZR0J1k8I",
@@ -695,20 +696,20 @@
       let selectedDate = null; // Store currently selected date string
 
       window.addEventListener("DOMContentLoaded", () => {
-        handleCallbackUrl()
-        // const params = new URLSearchParams(window.location.search);
-        // const profile = params.get("profile");
-        // const token = params.get("token");
-
-        // if (profile && token) {
-        //   localStorage.setItem("lineUserProfile", profile);
-        //   localStorage.setItem("lineUserToken", token);
-
-        //   console.log("LINE login complete", profile, token);
-
-        //   // ลบ query params ออก
-        //   window.history.replaceState({}, document.title, "/index.html");
-        // }
+        const params = new URLSearchParams(window.location.search);
+        const profile = params.get("profile");
+        const token = params.get("token");
+        
+        if (profile && token) {
+          localStorage.setItem("lineUserProfile", profile);
+          localStorage.setItem("lineUserToken", token);
+          
+          console.log("LINE login complete", profile, token);
+          
+          // ลบ query params ออก
+          window.history.replaceState({}, document.title, "/index.html");
+        }
+        handleGetProfile();
       });
 
       // --- Admin Simulation Data ---
@@ -755,9 +756,7 @@
         // Store state for verification
         localStorage.setItem("lineLoginState", state);
 
-        const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${lineLoginChannelId}&redirect_uri=${
-          redirectUrl
-        }&scope=${scope}&state=${state}`;
+        const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${lineLoginChannelId}&redirect_uri=${redirectUrl}&scope=${scope}&state=${state}`;
 
         // Redirect to LINE login
         window.location.href = lineLoginUrl;
@@ -813,8 +812,7 @@
               localStorage.removeItem("lineLoginState");
 
               // Redirect to runtime host origin
-              window.location.href =
-                "https://ski-reservation-five.vercel.app/";
+              window.location.href = "https://ski-reservation-five.vercel.app/";
 
               return true;
             } else {
@@ -835,6 +833,7 @@
         return false;
       }
 
+   
       function handleSuccessPage() {
         // Show success message and redirect back to main app
         showToast("Successfully logged in with LINE!", "success");
