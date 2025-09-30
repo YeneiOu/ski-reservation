@@ -695,7 +695,7 @@
       let selectedDate = null; // Store currently selected date string
 
       window.addEventListener("DOMContentLoaded", () => {
-        handleCallbackUrl();
+        handleCallbackUrl()
         // const params = new URLSearchParams(window.location.search);
         // const profile = params.get("profile");
         // const token = params.get("token");
@@ -707,8 +707,7 @@
         //   console.log("LINE login complete", profile, token);
 
         //   // ลบ query params ออก
-        //   const cleanUrl = window.location.origin + window.location.pathname;
-        //   window.history.replaceState({}, document.title, cleanUrl);
+        //   window.history.replaceState({}, document.title, "/index.html");
         // }
       });
 
@@ -756,7 +755,9 @@
         // Store state for verification
         localStorage.setItem("lineLoginState", state);
 
-        const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${lineLoginChannelId}&redirect_uri=${redirectUrl}&scope=${scope}&state=${state}`;
+        const lineLoginUrl = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${lineLoginChannelId}&redirect_uri=${
+          redirectUrl
+        }&scope=${scope}&state=${state}`;
 
         // Redirect to LINE login
         window.location.href = lineLoginUrl;
@@ -812,11 +813,8 @@
               localStorage.removeItem("lineLoginState");
 
               // Redirect to runtime host origin
-              window.location.href = "https://ski-reservation-five.vercel.app/";
-              // ลบ query params ออก
-              const cleanUrl =
-                window.location.origin + window.location.pathname;
-              window.history.replaceState({}, document.title, cleanUrl);
+              window.location.href =
+                "https://ski-reservation-five.vercel.app/";
 
               return true;
             } else {
@@ -865,7 +863,6 @@
 
       function showLineUserInfo() {
         if (lineUserProfile) {
-          console.log("lineUserProfile", lineUserProfile);
           const userInfoEl = document.getElementById("lineUserInfo");
           const userNameEl = document.getElementById("lineUserName");
 
