@@ -699,17 +699,18 @@
         const params = new URLSearchParams(window.location.search);
         const profile = params.get("profile");
         const token = params.get("token");
-        
+
         if (profile && token) {
           localStorage.setItem("lineUserProfile", profile);
           localStorage.setItem("lineUserToken", token);
-          
+
           console.log("LINE login complete", profile, token);
-          
+
           // ลบ query params ออก
           window.history.replaceState({}, document.title, "/index.html");
+          initializeFirebase();
         }
-        handleGetProfile();
+        // handleGetProfile();
       });
 
       // --- Admin Simulation Data ---
@@ -833,7 +834,6 @@
         return false;
       }
 
-   
       function handleSuccessPage() {
         // Show success message and redirect back to main app
         showToast("Successfully logged in with LINE!", "success");
@@ -842,6 +842,20 @@
           // Remove the success parameter and redirect to main app
           window.location.href = runtimeHost;
         }, 2000);
+      }
+      async function handleGetProfile() {
+        const token = localStorage.getItem("lineUserToken");
+        const profile = localStorage.getItem("lineUserProfile");
+        if (token && profile) {
+          lineUserToken = token.access_token;
+          lineUserProfile = {
+            userId: profile.sub,
+            displayName: profile.name,
+            pictureUrl: profile.picture,
+            email: profile.email,
+            statusMessage: "",
+          };
+        }
       }
 
       function handleLineLogout() {
@@ -907,6 +921,10 @@
               return;
             }
           } else {
+            // Get LINE profile from local storage
+            handleGetProfile()
+            // Close line login modal
+            hideLineLoginModal();
             // User is logged in with LINE, show user info
             showLineUserInfo();
           }
