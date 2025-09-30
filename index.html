@@ -205,14 +205,28 @@
           >
             View My Reservations
           </button>
-          <div id="lineUserInfo" class="hidden">
-            <p class="text-sm text-gray-600">
-              Logged in as: <span id="lineUserName" class="font-medium"></span>
-            </p>
+          <div id="lineUserInfo" class="hidden bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-md border border-gray-200">
+            <div class="flex items-center space-x-3 mb-3">
+              <img 
+                id="lineUserAvatar" 
+                src="" 
+                alt="User Avatar" 
+                class="w-12 h-12 rounded-full object-cover border-2 border-green-400 shadow-sm"
+              />
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-gray-800">
+                  <span id="lineUserName"></span>
+                </p>
+                <p class="text-xs text-gray-500">Logged in with LINE</p>
+              </div>
+            </div>
             <button
               id="lineLogoutBtn"
-              class="text-red-500 text-sm hover:underline"
+              class="w-full bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium py-2 px-3 rounded-lg transition-colors border border-red-200"
             >
+              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+              </svg>
               Logout
             </button>
           </div>
@@ -701,8 +715,17 @@
         const token = params.get("token");
 
         if (profile && token) {
-          localStorage.setItem("lineUserProfile", profile);
-          localStorage.setItem("lineUserToken", token);
+          localStorage.setItem("lineUserToken", token.access_token);
+          localStorage.setItem(
+            "lineUserProfile",
+            JSON.stringify({
+              userId: profile.sub,
+              displayName: profile.name,
+              pictureUrl: profile.picture,
+              email: profile.email,
+              statusMessage: "",
+            })
+          );
 
           console.log("LINE login complete", profile, token);
 
@@ -849,7 +872,6 @@
         if (token && profileString) {
           lineUserToken = token;
           lineUserProfile = JSON.parse(profileString);
-          console.log("Retrieved profile from localStorage:", lineUserProfile);
         }
       }
 
@@ -874,8 +896,10 @@
           console.log("lineUserProfile", lineUserProfile);
           const userInfoEl = document.getElementById("lineUserInfo");
           const userNameEl = document.getElementById("lineUserName");
+          const userAvatarEl = document.getElementById("lineUserAvatar");
 
           userNameEl.textContent = lineUserProfile.displayName || "LINE User";
+          userAvatarEl.src = lineUserProfile.pictureUrl || "https://via.placeholder.com/48x48/10b981/ffffff?text=👤";
           userInfoEl.classList.remove("hidden");
         }
       }
@@ -917,7 +941,7 @@
             }
           } else {
             // Get LINE profile from local storage
-            handleGetProfile()
+            handleGetProfile();
             // Close line login modal
             hideLineLoginModal();
             // User is logged in with LINE, show user info
