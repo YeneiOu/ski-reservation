@@ -967,14 +967,12 @@
           }
 
           onAuthStateChanged(auth, async (user) => {
-            if (user) {
-              userId = user.uid;
-              if (!appId) {
-                console.error('Firebase Project ID not found!');
-                return;
-              }
-              setupListeners();
+            // userId = user.uid;
+            if (!appId) {
+              console.error('Firebase Project ID not found!');
+              return;
             } else {
+              setupListeners();
               try {
                 if (
                   typeof __initial_auth_token !== 'undefined' &&
@@ -1399,7 +1397,7 @@
         const myRes = reservations
           .filter((r) => r.userId === userId && r.date >= todayStr)
           .sort((a, b) => (a.date + a.time > b.date + b.time ? 1 : -1));
-
+        console.log(myRes);
         if (myRes.length === 0) {
           listEl.innerHTML = `<p class="text-center text-gray-500" data-translate-key="noUpcomingReservations">You have no upcoming reservations.</p>`;
         } else {
@@ -1588,7 +1586,7 @@
             holdExpiresAt: null, // Clear expiry
             createdAt: Timestamp.fromDate(new Date()),
             userUrl: lineUserProfile.pictureUrl || '',
-            userDisplayName: lineUserProfile.Displayname || 'LINE User',
+            userDisplayName: lineUserProfile.displayName || 'LINE User',
             userEmail: lineUserProfile.email || '',
           };
 
