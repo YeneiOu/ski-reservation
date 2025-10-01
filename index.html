@@ -1587,9 +1587,9 @@
             payslipUrl: downloadURL,
             holdExpiresAt: null, // Clear expiry
             createdAt: Timestamp.fromDate(new Date()),
-            userUrl: profile.picture,
-            userDisplayName: profile.name,
-            userEmail: profile.email,
+            userUrl: lineUserProfile.pictureUrl || '',
+            userDisplayName: lineUserProfile.Displayname || 'LINE User',
+            userEmail: lineUserProfile.email || '',
           };
 
           const resDocRef = doc(
