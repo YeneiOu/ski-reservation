@@ -967,12 +967,14 @@
           }
 
           onAuthStateChanged(auth, async (user) => {
-            // userId = user.uid;
-            if (!appId) {
-              console.error('Firebase Project ID not found!');
-              return;
-            } else {
+            userId = user.uid;
+            if (!userId) {
+              if (!appId) {
+                console.error('Firebase Project ID not found!');
+                return;
+              }
               setupListeners();
+            } else {
               try {
                 if (
                   typeof __initial_auth_token !== 'undefined' &&
@@ -1588,6 +1590,7 @@
             userUrl: lineUserProfile.pictureUrl || '',
             userDisplayName: lineUserProfile.displayName || 'LINE User',
             userEmail: lineUserProfile.email || '',
+            userId: lineUserProfile.userId || '',
           };
 
           const resDocRef = doc(
